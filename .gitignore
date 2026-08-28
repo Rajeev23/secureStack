@@ -44,10 +44,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# local sqlite database
-/data/*.db
-/data/*.db-*
-
 # local editor / agent tooling (not part of the app)
 .agents/
 .cursorignore

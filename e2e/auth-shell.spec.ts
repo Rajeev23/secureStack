@@ -112,6 +112,10 @@ test("auth APIs reject anonymous and invalid input without hanging", async ({ re
 
   const logout = await request.post("/api/auth/logout");
   expect(logout.status()).toBe(200);
+
+  const meAfterLogout = await request.get("/api/auth/me");
+  expect(meAfterLogout.status()).toBe(401);
+  await expect(meAfterLogout.json()).resolves.toMatchObject({ user: null });
 });
 
 test("unknown credentials do not create a session", async ({ request }) => {

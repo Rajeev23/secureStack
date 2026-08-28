@@ -260,8 +260,8 @@ Do not leave documentation for a follow-up PR if the code already changed the fl
 - Forgot password: `POST /api/auth/forgot-password` emails a reset link; `/auth/callback` exchanges the code; `POST /api/auth/reset-password` sets the new password.
 - Account: Settings → Account (`/settings/account`) shows name, email, and update password (`GET/PATCH /api/account`, `POST /api/account/password`).
 - Onboarding: `POST /api/onboarding` with company name creates the company and application `users` row (role `ADMIN`).
-- Logout: `POST /api/auth/logout` or `signOut()` from `lib/auth/client.ts`.
-- Set `AUTH_DEV_BYPASS=true` in `.env.local` to skip auth redirects during local development.
+- Logout: `POST /api/auth/logout` or `signOut()` from `lib/auth/client.ts` — revokes the Auth session, expires `sb-*-auth-token` cookies, and sends the browser to `/login`. After logout, `/api/auth/me` is `401` and `/dashboard` redirects to login.
+- Set `AUTH_DEV_BYPASS=true` in `.env.local` to skip the login wall during UI work. It is ignored in production. Leave it `false` to test login/logout — with bypass on, `/dashboard` stays reachable without a session.
 - Required env: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (or legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY`), `SUPABASE_SERVICE_ROLE_KEY`. See `docs/supabase/README.md`.
 - GitHub OAuth (repository access, not login): `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_TOKEN_ENCRYPTION_KEY`. Scope is `read:user repo` so private repos can be listed and read; scans never write.
 - Projects: one GitHub repository per project. Creating a project goes to Connect GitHub; Back, refresh, or opening the project again resumes that step until a repo is linked. `GET/POST /api/projects`, `GET/PATCH/DELETE /api/projects/:id`. Removing a project also deletes its scans and findings.

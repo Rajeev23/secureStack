@@ -1,7 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
+  expireSupabaseAuthCookies,
   hasSupabaseAuthCookie,
   isSupabaseAuthCookieName,
+  isSupabaseAuthStorageCookieName,
   needsProxyAuthLookup,
   resolveProxyAccessDecision,
 } from "@/lib/auth/proxy-access";
@@ -74,9 +76,37 @@ describe("Supabase auth cookies", () => {
     expect(isSupabaseAuthCookieName("sb-abc-auth-token")).toBe(true);
     expect(isSupabaseAuthCookieName("sb-abc-auth-token.0")).toBe(true);
     expect(isSupabaseAuthCookieName("sb-abc-auth-token-code-verifier")).toBe(false);
+    expect(isSupabaseAuthStorageCookieName("sb-abc-auth-token-code-verifier")).toBe(true);
     expect(isSupabaseAuthCookieName("theme")).toBe(false);
     expect(hasSupabaseAuthCookie([{ name: "sb-abc-auth-token" }])).toBe(true);
     expect(hasSupabaseAuthCookie([{ name: "sb-abc-auth-token-code-verifier" }])).toBe(false);
+  });
+
+  it("expires session and PKCE cookies on logout without touching other cookies", () => {
+    const set = vi.fn();
+    const expired = expireSupabaseAuthCookies(
+      [
+        { name: "sb-abc-auth-token.0" },
+        { name: "sb-abc-auth-token.1" },
+        { name: "sb-abc-auth-token-code-verifier" },
+        { name: "theme" },
+      ],
+      set,
+      false,
+    );
+
+    expect(expired).toEqual([
+      "sb-abc-auth-token.0",
+      "sb-abc-auth-token.1",
+      "sb-abc-auth-token-code-verifier",
+    ]);
+    expect(set).toHaveBeenCalledTimes(3);
+    expect(set).toHaveBeenCalledWith(
+      "sb-abc-auth-token.0",
+      "",
+      expect.objectContaining({ path: "/", maxAge: 0, httpOnly: true, sameSite: "lax", secure: false }),
+    );
+    expect(set).not.toHaveBeenCalledWith("theme", expect.anything(), expect.anything());
   });
 });
 

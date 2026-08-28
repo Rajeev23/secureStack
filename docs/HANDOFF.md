@@ -147,7 +147,7 @@ features/<name>/
 - Signup, login, and forgot-password are IP rate-limited; signup and reset emails avoid email enumeration.
 - Login and signup must not abort Auth fetches. Public pages stay fast by skipping Auth lookup, not by timing out `signInWithPassword`.
 - Signup collects name, email, and password (at least 8 characters).
-- Set `AUTH_DEV_BYPASS=true` in `.env.local` to skip auth redirects during local development.
+- Set `AUTH_DEV_BYPASS=true` in `.env.local` to skip the login wall during UI work. Leave it `false` to test login/logout (bypass keeps `/dashboard` reachable without a session).
 
 ## After handoff
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api/handle-error";
+import { isAuthDevBypassEnabled } from "@/lib/auth/proxy-access";
 import { requireSession } from "@/lib/auth/session";
 import { resetPasswordSchema } from "@/lib/auth/signup-schema";
 import { DomainError } from "@/lib/errors";
@@ -25,6 +26,10 @@ export async function POST(request: Request) {
   }
 
   const cookieResponse = NextResponse.json({ ok: true });
+
+  if (isAuthDevBypassEnabled()) {
+    return NextResponse.json({ ok: true, redirectTo: "/dashboard" });
+  }
 
   try {
     const supabase = await createSupabaseRouteClient(cookieResponse);

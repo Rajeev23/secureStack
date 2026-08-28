@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabasePublicEnv } from "@/server/supabase/env";
+import { supabaseFetch } from "@/server/supabase/fetch";
 
 export function copyCookies(from: NextResponse, to: NextResponse) {
   from.cookies.getAll().forEach((cookie) => {
@@ -30,6 +31,7 @@ export async function getProxyAuthState(request: NextRequest): Promise<{
   }
 
   const supabase = createServerClient(env.url, env.publicKey, {
+    global: { fetch: supabaseFetch },
     cookies: {
       getAll() {
         return request.cookies.getAll();

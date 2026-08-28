@@ -30,6 +30,47 @@ export function isSupabaseAuthCookieName(name: string): boolean {
   return /^sb-.+-auth-token(?:\.\d+)?$/.test(name);
 }
 
+/** Session cookies plus PKCE verifier — all of these must be expired on logout. */
+export function isSupabaseAuthStorageCookieName(name: string): boolean {
+  return isSupabaseAuthCookieName(name) || /^sb-.+-auth-token-code-verifier$/.test(name);
+}
+
+export type AuthCookieExpireOptions = {
+  path: "/";
+  maxAge: 0;
+  expires: Date;
+  httpOnly: true;
+  sameSite: "lax";
+  secure: boolean;
+};
+
+export function authCookieExpireOptions(secure = process.env.NODE_ENV === "production"): AuthCookieExpireOptions {
+  return {
+    path: "/",
+    maxAge: 0,
+    expires: new Date(0),
+    httpOnly: true,
+    sameSite: "lax",
+    secure,
+  };
+}
+
+/** Last write on logout: expire session cookies so a failed/partial signOut cannot leave you in. */
+export function expireSupabaseAuthCookies(
+  cookies: Iterable<{ name: string }>,
+  set: (name: string, value: string, options: AuthCookieExpireOptions) => void,
+  secure = process.env.NODE_ENV === "production",
+): string[] {
+  const options = authCookieExpireOptions(secure);
+  const expired: string[] = [];
+  for (const cookie of cookies) {
+    if (!isSupabaseAuthStorageCookieName(cookie.name)) continue;
+    set(cookie.name, "", options);
+    expired.push(cookie.name);
+  }
+  return expired;
+}
+
 export function hasSupabaseAuthCookie(cookies: Iterable<{ name: string }>): boolean {
   for (const cookie of cookies) {
     if (isSupabaseAuthCookieName(cookie.name)) return true;

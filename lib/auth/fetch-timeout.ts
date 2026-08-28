@@ -1,6 +1,9 @@
 /** Optional Auth Admin fallback after login already succeeded. Never used to abort sign-in. */
 export const AUTH_LOOKUP_TIMEOUT_MS = 4_000;
 
+/** Bound outbound Auth/DB fetches so a frozen provider cannot spin the UI forever. */
+export const AUTH_FETCH_TIMEOUT_MS = 10_000;
+
 export async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   try {

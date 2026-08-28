@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAuthNetworkError, withTimeout } from "@/lib/auth/fetch-timeout";
+import { AUTH_FETCH_TIMEOUT_MS, isAuthNetworkError, withTimeout } from "@/lib/auth/fetch-timeout";
 
 describe("withTimeout", () => {
   it("resolves when the work finishes in time", async () => {
@@ -25,5 +25,11 @@ describe("isAuthNetworkError", () => {
     expect(
       isAuthNetworkError({ code: "invalid_credentials", message: "Invalid login credentials" }),
     ).toBe(false);
+  });
+});
+
+describe("AUTH_FETCH_TIMEOUT_MS", () => {
+  it("fails frozen Auth calls before the UI can spin for minutes", () => {
+    expect(AUTH_FETCH_TIMEOUT_MS).toBe(10_000);
   });
 });

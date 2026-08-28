@@ -1,14 +1,18 @@
 "use client";
 
-import { APP_HOME_PATH } from "@/lib/auth/constants";
+import { APP_LOGIN_PATH } from "@/lib/auth/constants";
 
 export async function signOut(): Promise<void> {
   try {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch("/api/auth/logout", {
+      method: "POST",
+      credentials: "same-origin",
+      cache: "no-store",
+    });
   } finally {
     const { useUserStore } = await import("@/features/auth/stores/user-store");
     useUserStore.getState().clearUser();
-    window.location.assign(APP_HOME_PATH);
+    window.location.assign(APP_LOGIN_PATH);
   }
 }
 

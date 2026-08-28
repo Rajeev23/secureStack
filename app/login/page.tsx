@@ -1,4 +1,8 @@
 import type { Metadata } from "next";
+import { LoginPage } from "@/features/auth";
 
 export const metadata: Metadata = { title: "Sign in" };
-export { LoginPage as default } from "@/features/auth";
+
+export default function Page() {
+  return <LoginPage />;
+}

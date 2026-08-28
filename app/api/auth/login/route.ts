@@ -7,7 +7,8 @@ import {
   isRateLimitBlocked,
 } from "@/lib/auth/rate-limit";
 import { isAuthNetworkError } from "@/lib/auth/fetch-timeout";
-import { getAuthUserById, resolvePostAuthRedirect } from "@/services/api/auth";
+import { isAuthDevBypassEnabled } from "@/lib/auth/proxy-access";
+import { getAuthUserById, getDemoAuthUser, resolvePostAuthRedirect } from "@/services/api/auth";
 import { createSupabaseRouteClient } from "@/server/supabase/server";
 
 const loginSchema = z.object({
@@ -53,6 +54,15 @@ export async function POST(request: Request) {
   }
 
   const cookieResponse = NextResponse.json({ ok: true });
+
+  if (isAuthDevBypassEnabled()) {
+    const user = await getDemoAuthUser();
+    const redirectTo = "/dashboard";
+    if (isFormPost) {
+      return NextResponse.redirect(new URL(redirectTo, request.url), 303);
+    }
+    return NextResponse.json({ user, redirectTo });
+  }
 
   try {
     const supabase = await createSupabaseRouteClient(cookieResponse);

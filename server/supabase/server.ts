@@ -2,6 +2,7 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { requireSupabasePublicEnv } from "@/server/supabase/env";
+import { supabaseFetch } from "@/server/supabase/fetch";
 
 type CookieToSet = { name: string; value: string; options: CookieOptions };
 
@@ -15,6 +16,7 @@ export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
 
   return createServerClient(url, publicKey, {
+    global: { fetch: supabaseFetch },
     cookies: {
       getAll() {
         return cookieStore.getAll();
@@ -38,6 +40,7 @@ export async function createSupabaseRouteClient(response: NextResponse) {
   const cookieStore = await cookies();
 
   return createServerClient(url, publicKey, {
+    global: { fetch: supabaseFetch },
     cookies: {
       getAll() {
         return cookieStore.getAll();

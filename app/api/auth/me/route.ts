@@ -1,23 +1,21 @@
 import { NextResponse } from "next/server";
-import { isAuthDevBypassEnabled } from "@/lib/auth/proxy-access";
 import { getSessionUserId } from "@/lib/auth/session";
-import { getAuthUserById, getDemoAuthUser, resolvePostAuthRedirect } from "@/services/api/auth";
+import { getAuthUserById, resolvePostAuthRedirect } from "@/services/api/auth";
 
 export async function GET() {
   const userId = await getSessionUserId();
-  const bypass = isAuthDevBypassEnabled();
 
-  if (!userId && !bypass) {
+  if (!userId) {
     return NextResponse.json({ user: null }, { status: 401 });
   }
 
   try {
-    const user = userId ? await getAuthUserById(userId) : await getDemoAuthUser();
+    const user = await getAuthUserById(userId);
     if (!user) {
       return NextResponse.json({ user: null }, { status: 401 });
     }
 
-    const redirectTo = userId ? await resolvePostAuthRedirect(userId) : "/dashboard";
+    const redirectTo = await resolvePostAuthRedirect(userId);
 
     return NextResponse.json({
       user,

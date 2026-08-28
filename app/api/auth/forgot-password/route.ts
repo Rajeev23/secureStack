@@ -6,8 +6,9 @@ import {
   isRateLimitBlocked,
 } from "@/lib/auth/rate-limit";
 import { forgotPasswordSchema } from "@/lib/auth/signup-schema";
-import { createSupabaseRouteClient } from "@/server/supabase/server";
+import { isAuthDevBypassEnabled } from "@/lib/auth/proxy-access";
 import { requireAppUrl } from "@/server/supabase/env";
+import { createSupabaseRouteClient } from "@/server/supabase/server";
 
 const WINDOW_MS = 60 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
@@ -54,6 +55,10 @@ export async function POST(request: Request) {
   }
 
   const cookieResponse = NextResponse.json({ ok: true, message: SUCCESS_MESSAGE });
+
+  if (isAuthDevBypassEnabled()) {
+    return cookieResponse;
+  }
 
   try {
     const supabase = await createSupabaseRouteClient(cookieResponse);

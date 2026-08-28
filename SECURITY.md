@@ -6,7 +6,7 @@ Security fixes are applied on the default branch (`main` / `master`). Upgrade to
 
 ## Authentication
 
-SecureStack uses **Supabase Auth** (email + password). `AUTH_DEV_BYPASS=true` skips auth redirects in local development only and is ignored in production.
+SecureStack uses **Supabase Auth** (email + password). `AUTH_DEV_BYPASS=true` skips the login wall in local development only and is ignored in production. Leave it off to test logout.
 
 Before deploying:
 

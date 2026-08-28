@@ -7,6 +7,9 @@ import { getSupabasePublicEnv } from "@/server/supabase/env";
 
 export async function getSessionUserId(): Promise<string | null> {
   if (!getSupabasePublicEnv()) return null;
+  // Local bypass must not call Auth. A leftover session cookie + frozen GoTrue
+  // would hang every dashboard /api/auth/me request.
+  if (isAuthDevBypassEnabled()) return null;
 
   try {
     const cookieStore = await cookies();

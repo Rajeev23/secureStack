@@ -116,10 +116,10 @@ See [AGENTS.md](./AGENTS.md) for conventions and how to add pages.
 - Login: `POST /api/auth/login` — sets the session cookie
 - Forgot password: `/forgot-password` → `POST /api/auth/forgot-password` → email link → `/auth/callback` → `/reset-password`
 - Account: `/settings/account` for name, email, and update password
-- Logout: `POST /api/auth/logout` — clears the session
-- Session user: `GET /api/auth/me` — hydrates the client user store
+- Logout: `POST /api/auth/logout` — clears the session cookie and sends you to `/login`
+- Session user: `GET /api/auth/me` — hydrates the client user store (`401` when signed out)
 - `proxy.ts` redirects unauthenticated users to `/login`
-- Set `AUTH_DEV_BYPASS=true` in `.env.local` to skip auth during development only
+- Set `AUTH_DEV_BYPASS=true` in `.env.local` to skip the login wall during UI work only. Leave it `false` to test login/logout.
 - Upstash Redis is **recommended** for shared login rate limiting; without it, production uses an in-memory limiter (single instance only)
 - Set `ENFORCE_PRODUCTION_ENV=true` to fail fast when secrets or Upstash are missing
 - `/api/*` is public at the proxy layer by default — protect real APIs in the route handlers

@@ -31,6 +31,7 @@ New users sign up from the public home page (or `/signup`) with **name**, **emai
 - **Forgot password** on `/login` sends a reset email. The link returns to `/auth/callback`, then `/reset-password`.
 - The authenticated dashboard layout redirects users whose company setup is incomplete.
 - Completed users go directly to `/dashboard`.
+- **Log out** (header or user menu) calls `POST /api/auth/logout`, clears the session, and sends you to `/login`. Visiting `/dashboard` afterwards requires signing in again.
 
 ## Signup fields
 
@@ -50,6 +51,8 @@ Signed-in users manage their own profile at **Settings → Account** (`/settings
 | Request | Result |
 | --- | --- |
 | `POST /api/auth/signup` with `{ name, email, password }` | Create the Auth user, set the session, send `redirectTo: "/onboarding"` |
+| `POST /api/auth/logout` | Clear the session cookie; the client then goes to `/login` |
+| `GET /api/auth/me` | Current user, or `401` with `{ user: null }` when signed out |
 | `POST /api/auth/forgot-password` with `{ email }` | Send a reset email if the address exists (always returns success) |
 | `POST /api/auth/reset-password` with `{ password }` | Set a new password from a recovery session |
 | `GET/PATCH /api/account` | Load or update the signed-in user’s name |

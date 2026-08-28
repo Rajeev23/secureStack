@@ -8,8 +8,10 @@ import {
 import { signupSchema } from "@/lib/auth/signup-schema";
 import { DomainError } from "@/lib/errors";
 import { isAuthNetworkError } from "@/lib/auth/fetch-timeout";
+import { isAuthDevBypassEnabled } from "@/lib/auth/proxy-access";
 import { normalizeName } from "@/lib/company/names";
 import { createSupabaseRouteClient } from "@/server/supabase/server";
+import { getDemoAuthUser } from "@/services/api/auth";
 
 const WINDOW_MS = 60 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
@@ -62,6 +64,14 @@ export async function POST(request: Request) {
   }
 
   const cookieResponse = NextResponse.json({ ok: true });
+
+  if (isAuthDevBypassEnabled()) {
+    const user = await getDemoAuthUser();
+    return NextResponse.json({
+      user: { ...user, name: normalizeName(parsed.data.name) || user.name },
+      redirectTo: "/onboarding",
+    });
+  }
 
   try {
     const supabase = await createSupabaseRouteClient(cookieResponse);
