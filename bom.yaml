@@ -1,0 +1,471 @@
+platform:
+  version: "0.1.0"
+  release_channel: alpha
+
+kubernetes:
+  version: "1.35.3"
+  docs: "https://kubernetes.io/releases/"
+  binaries:
+    kubeadm: "https://dl.k8s.io/release/v1.35.3/bin/{{ .OS }}/{{ .Arch }}/kubeadm"
+    kubelet: "https://dl.k8s.io/release/v1.35.3/bin/{{ .OS }}/{{ .Arch }}/kubelet"
+    kubectl: "https://dl.k8s.io/release/v1.35.3/bin/{{ .OS }}/{{ .Arch }}/kubectl"
+  images:
+    - registry.k8s.io/kube-apiserver:v1.35.3
+    - registry.k8s.io/kube-controller-manager:v1.35.3
+    - registry.k8s.io/kube-scheduler:v1.35.3
+    - registry.k8s.io/kube-proxy:v1.35.3
+    - registry.k8s.io/etcd:3.6.6-0
+    - registry.k8s.io/coredns/coredns:v1.13.1
+    - registry.k8s.io/pause:3.10.1
+
+containerd:
+  version: "1.7.30"
+  docs: "https://github.com/containerd/containerd/blob/main/RELEASES.md"
+  url: "https://github.com/containerd/containerd/releases/download/v1.7.30/containerd-1.7.30-{{ .OS }}-{{ .Arch }}.tar.gz"
+  sha256:
+    amd64: ""
+    arm64: ""
+
+runc:
+  version: "1.4.2"
+  docs: "https://github.com/opencontainers/runc/releases"
+  url: "https://github.com/opencontainers/runc/releases/download/v1.4.2/runc.{{ .Arch }}"
+  sha256:
+    amd64: ""
+    arm64: ""
+
+crictl:
+  version: "1.35.0"
+  docs: "https://github.com/kubernetes-sigs/cri-tools/releases"
+  url: "https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.35.0/crictl-v1.35.0-{{ .OS }}-{{ .Arch }}.tar.gz"
+  sha256:
+    amd64: ""
+    arm64: ""
+
+cni_plugins:
+  version: "1.9.1"
+  docs: "https://github.com/containernetworking/plugins/releases"
+  url: "https://github.com/containernetworking/plugins/releases/download/v1.9.1/cni-plugins-{{ .OS }}-{{ .Arch }}-v1.9.1.tgz"
+  sha256:
+    amd64: ""
+    arm64: ""
+
+helm:
+  version: "3.20.1"
+  docs: "https://helm.sh/docs/"
+  url: "https://get.helm.sh/helm-v3.20.1-{{ .OS }}-{{ .Arch }}.tar.gz"
+  sha256:
+    amd64: ""
+    arm64: ""
+
+components:
+  kube_ovn:
+    name: Kube-OVN
+    docs: "https://kubeovn.github.io/docs/stable/"
+    chart_repo: https://kubeovn.github.io/kube-ovn
+    chart_name: kube-ovn
+    version: "1.15.9"
+    namespace: kube-system
+    images:
+      - kubeovn/kube-ovn:v1.15.9
+
+  rook_ceph:
+    name: Rook-Ceph
+    docs: "https://rook.io/docs/rook/latest-release/Getting-Started/intro/"
+    chart_repo: https://charts.rook.io/release
+    chart_name: rook-ceph
+    version: "1.19.3"
+    namespace: rook-ceph
+    images:
+      - rook/ceph:v1.19.3
+      - quay.io/ceph/ceph:v19.2.3
+      - quay.io/cephcsi/cephcsi:v3.16.2
+      - registry.k8s.io/sig-storage/csi-provisioner:v6.1.1
+      - registry.k8s.io/sig-storage/csi-attacher:v4.11.0
+      - registry.k8s.io/sig-storage/csi-resizer:v2.1.0
+      - registry.k8s.io/sig-storage/csi-snapshotter:v8.5.0
+      - registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.16.0
+      # Cluster-level snapshot-controller (binds VolumeSnapshot ->
+      # VolumeSnapshotContent). Rook ships only the csi-snapshotter sidecar
+      # above; this admin-provided controller is what's missing on a fresh
+      # cluster, so VolumeSnapshots (volume + VM snapshots) never bind.
+      # Manifests vendored in deploy/manifests/snapshot-controller/
+      # (external-snapshotter v8.4.0, whose setup manifest pins this image).
+      - registry.k8s.io/sig-storage/snapshot-controller:v8.2.1
+
+  rook_ceph_cluster:
+    name: Rook-Ceph Cluster
+    chart_repo: https://charts.rook.io/release
+    chart_name: rook-ceph-cluster
+    version: "1.19.3"
+    namespace: rook-ceph
+    images: []
+
+  kubevirt:
+    name: KubeVirt
+    docs: "https://kubevirt.io/user-guide/"
+    version: "1.8.1"
+    namespace: kubevirt
+    manifest_url: "https://github.com/kubevirt/kubevirt/releases/download/v1.8.1/kubevirt-operator.yaml"
+    # NO cr_url: the KubeVirt CR is repo-owned — deploy/manifests/kubevirt/
+    # kubevirt-cr.yaml, shipped into iso/artifacts/manifests/ by the
+    # Makefile and applied with SSA by phaseInstallKubeVirt. See that
+    # file's header.
+    images:
+      - quay.io/kubevirt/virt-operator:v1.8.1
+      - quay.io/kubevirt/virt-api:v1.8.1
+      - quay.io/kubevirt/virt-controller:v1.8.1
+      - quay.io/kubevirt/virt-handler:v1.8.1
+      - quay.io/kubevirt/virt-launcher:v1.8.1
+
+  cdi:
+    name: CDI
+    docs: "https://kubevirt.io/user-guide/storage/containerized_data_importer/"
+    version: "1.65.0"
+    namespace: cdi
+    manifest_url: "https://github.com/kubevirt/containerized-data-importer/releases/download/v1.65.0/cdi-operator.yaml"
+    cr_url: "https://github.com/kubevirt/containerized-data-importer/releases/download/v1.65.0/cdi-cr.yaml"
+    images:
+      - quay.io/kubevirt/cdi-operator:v1.65.0
+      - quay.io/kubevirt/cdi-controller:v1.65.0
+      - quay.io/kubevirt/cdi-importer:v1.65.0
+      - quay.io/kubevirt/cdi-uploadproxy:v1.65.0
+
+  cilium:
+    name: Cilium
+    docs: "https://docs.cilium.io/en/stable/"
+    chart_repo: https://helm.cilium.io/
+    chart_name: cilium
+    version: "1.19.2"
+    namespace: kube-system
+    images:
+      - quay.io/cilium/cilium:v1.19.2
+      - quay.io/cilium/operator-generic:v1.19.2
+      - quay.io/cilium/cilium-envoy:v1.35.9-1773656288-7b052e66eb2cfc5ac130ce0a5be66202a10d83be
+
+  temporal:
+    name: Temporal
+    docs: "https://docs.temporal.io/"
+    chart_repo: https://go.temporal.io/helm-charts
+    chart_name: temporal
+    version: "1.0.0"
+    namespace: temporal
+    images:
+      - temporalio/server:1.30.3
+      - temporalio/admin-tools:1.30.3
+      - temporalio/ui:2.48.1
+
+  keycloak:
+    name: Keycloak
+    docs: "https://www.keycloak.org/documentation"
+    # Official upstream image (CNCF/Red Hat project), no Bitnami. Deployed
+    # by phaseInstallKeycloak as raw manifests (StatefulSet + Services) —
+    # there is no Helm chart. The free Bitnami catalog was frozen
+    # ("bitnamilegacy") and no longer ships current Keycloak.
+    namespace: keycloak
+    images:
+      - quay.io/keycloak/keycloak:26.6.3
+
+  # SpiceDB — authorization plane (PRD: docs/prds/iam-overhaul-v1.md).
+  # Installed via the upstream operator release bundle (no helm chart);
+  # bom-sync downloads manifest_url into manifests/spicedb-operator.yaml
+  # for air-gap installs. The SpiceDBCluster CR pins the spicedb image
+  # explicitly so the operator never pulls its own default in air-gap.
+  # Datastore: dedicated CNPG cluster spicedb-pg (per-component pattern,
+  # same as keycloak-pg / temporal-pg — provisioned by phaseInstallSpiceDB,
+  # not bundled).
+  spicedb:
+    name: SpiceDB
+    docs: "https://authzed.com/docs/spicedb/concepts/operator"
+    version: "1.21.0"
+    namespace: spicedb-system
+    manifest_url: "https://github.com/authzed/spicedb-operator/releases/download/v1.21.0/bundle.yaml"
+    images:
+      - ghcr.io/authzed/spicedb-operator:v1.21.0
+      - ghcr.io/authzed/spicedb:v1.42.1
+
+  # SPIRE — workload-identity plane (PRD: docs/prds/iam.md §8). Deployed via
+  # raw manifests (no helm chart), like SpiceDB. Datastore: dedicated CNPG
+  # cluster spire-pg (per-component pattern). The SPIRE components version
+  # together; the SPIFFE CSI driver versions independently. phaseInstallSPIRE
+  # stands up the server (+ OIDC discovery sidecar) and the agent DaemonSet.
+  spire:
+    name: SPIRE
+    docs: "https://spiffe.io/docs/latest/"
+    version: "1.15.1"
+    namespace: spire-system
+    images:
+      - ghcr.io/spiffe/spire-server:1.15.1
+      - ghcr.io/spiffe/spire-agent:1.15.1
+      - ghcr.io/spiffe/oidc-discovery-provider:1.15.1
+      - ghcr.io/spiffe/spiffe-csi-driver:0.2.12
+      - registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.13.0
+
+  openbao:
+    name: OpenBao
+    docs: "https://openbao.org/docs/"
+    chart_repo: https://openbao.github.io/openbao-helm
+    chart_name: openbao
+    version: "0.28.3"
+    namespace: openbao
+    images:
+      - quay.io/openbao/openbao:2.5.4
+
+  cloudnative_pg:
+    name: CloudNativePG
+    docs: "https://cloudnative-pg.io/documentation/current/"
+    chart_repo: https://cloudnative-pg.github.io/charts
+    chart_name: cloudnative-pg
+    version: "0.28.0"
+    namespace: cnpg-system
+    images:
+      - ghcr.io/cloudnative-pg/cloudnative-pg:1.29.0
+      - ghcr.io/cloudnative-pg/postgresql:18.3
+
+  metallb:
+    name: MetalLB
+    docs: "https://metallb.io/"
+    chart_repo: https://metallb.github.io/metallb
+    chart_name: metallb
+    version: "0.15.3"
+    namespace: metallb-system
+    images:
+      - quay.io/metallb/controller:v0.15.3
+      - quay.io/metallb/speaker:v0.15.3
+
+  kube_vip:
+    name: kube-vip
+    docs: "https://kube-vip.io/"
+    version: "0.8.7"
+    namespace: kube-system
+    # Static-pod, not Helm-installed: bootstrap renders the manifest
+    # directly into /etc/kubernetes/manifests/ during phaseInstallKubeVip
+    # so kubelet picks it up before kube-apiserver tries to bind. The
+    # image just needs to be in containerd before kubelet starts the
+    # static pod — phaseImportImages handles that.
+    images:
+      - ghcr.io/kube-vip/kube-vip:v0.8.7
+
+  cert_manager:
+    name: cert-manager
+    docs: "https://cert-manager.io/docs/"
+    chart_repo: https://charts.jetstack.io
+    chart_name: cert-manager
+    version: "1.20.1"
+    namespace: cert-manager
+    images:
+      - quay.io/jetstack/cert-manager-controller:v1.20.1
+      - quay.io/jetstack/cert-manager-cainjector:v1.20.1
+      - quay.io/jetstack/cert-manager-webhook:v1.20.1
+      - quay.io/jetstack/cert-manager-startupapicheck:v1.20.1
+
+  ingress_nginx:
+    name: nginx-ingress
+    docs: "https://kubernetes.github.io/ingress-nginx/"
+    chart_repo: https://kubernetes.github.io/ingress-nginx
+    chart_name: ingress-nginx
+    version: "4.11.3"
+    namespace: ingress-nginx
+    images:
+      # Controller image the chart 4.11.3 pulls. Kept here so air-gapped
+      # installs using the deprecated nginx-ingress rollback path bake it
+      # into the image tarball (bom-sync enumerates .images per component).
+      - registry.k8s.io/ingress-nginx/controller:v1.11.3
+    # Deprecated: superseded by haproxy_ingress in W1 (see
+    # docs/superpowers/plans/2026-06-04-w1-haproxy-migration.md).
+    # The chart bundle stays for one release as a rollback path
+    # for pre-W1 cluster upgrades; phaseInstallIngressNginx no-ops
+    # when the haproxy-ingress release already exists.
+
+  # HAProxy Kubernetes Ingress Controller — W1 replacement for
+  # nginx-ingress. Deployed as DaemonSet+hostNetwork on every node,
+  # binds the same OVH-port-filter-friendly 31180/31443 ports the
+  # nginx-ingress phase used (see PlatformHTTPSPort in installer
+  # for the rationale). TCP/UDP services ConfigMaps preserve the
+  # existing L4 surface for the LB v1 NLB driver.
+  haproxy_ingress:
+    name: HAProxy Kubernetes Ingress Controller
+    docs: "https://www.haproxy.com/documentation/kubernetes-ingress/"
+    chart_repo: https://haproxytech.github.io/helm-charts
+    chart_name: kubernetes-ingress
+    version: "1.52.0"
+    namespace: haproxy-controller
+
+  multus:
+    name: Multus CNI
+    docs: "https://github.com/k8snetworkplumbingwg/multus-cni"
+    # Multus has no official helm chart; we ship the upstream "thick"
+    # daemonset YAML pinned to v4.1.4 in deploy/manifests/multus/.
+    # Required by Pattern 3 (public VM networking) so the Kube-OVN VPC
+    # NAT Gateway pod can attach a Macvlan-side interface in addition
+    # to its overlay interface — without Multus the gateway pod never
+    # schedules and no FloatingIP/SNAT data path comes up.
+    version: "4.1.4"
+    namespace: kube-system
+    images:
+      - ghcr.io/k8snetworkplumbingwg/multus-cni:v4.1.4-thick
+
+  multus-dynamic-networks:
+    name: Multus Dynamic Networks Controller
+    docs: "https://github.com/k8snetworkplumbingwg/multus-dynamic-networks-controller"
+    # No official helm chart; we ship the upstream DaemonSet YAML pinned in
+    # deploy/manifests/multus-dynamic-networks/. Reconciles a pod's desired
+    # k8s.v1.cni.cncf.io/networks annotation against its network-status,
+    # enabling migration-free secondary-NIC hotplug for KubeVirt VMs
+    # (Network Interfaces PRD, task B7). Requires thick Multus (talks to the
+    # multus daemon server socket). The :vX.Y.Z tag is a multi-arch manifest
+    # (amd64/arm64/s390x) as of v0.3.5+.
+    version: "0.3.8"
+    namespace: kube-system
+    images:
+      - ghcr.io/k8snetworkplumbingwg/multus-dynamic-networks-controller:v0.3.8
+
+  observability:
+    name: Observability (VictoriaMetrics stack)
+    docs: "https://docs.victoriametrics.com/"
+    # Deployed via Go-templated manifests in internal/bootstrap/installer/
+    # observability_*.go (no Helm chart), so this is an images-only BOM
+    # component: bom-sync.sh mirrors components[].images regardless of
+    # chart, and the chart loop skips chart-less entries. Image set is the
+    # canonical observability stack (metrics + logs + traces + dashboards),
+    # replacing the retired kube-prometheus-stack. Keep in sync with the
+    # pins in observability_metrics.go / _grafana.go / _logs.go / _traces.go
+    # / _kube_state_metrics.go / _vmauth.go / _alerts.go.
+    namespace: sovereign-observability
+    images:
+      # VictoriaMetrics cluster — metrics storage/insert/select + agent + alert + auth
+      - victoriametrics/vmstorage:v1.107.0-cluster
+      - victoriametrics/vminsert:v1.107.0-cluster
+      - victoriametrics/vmselect:v1.107.0-cluster
+      - victoriametrics/vmagent:v1.107.0
+      - victoriametrics/vmalert:v1.107.0
+      - victoriametrics/vmauth:v1.107.0
+      # Logs + traces (single-node mode)
+      - victoriametrics/victoria-logs:v1.50.0
+      - victoriametrics/victoria-traces:v0.9.0
+      # Dashboards + alerting. Custom Grafana image (build/sovereign-grafana/
+      # Dockerfile) = grafana/grafana:11.4.0 + the VictoriaLogs datasource
+      # plugin baked in, so air-gapped Grafana never fetches from grafana.com.
+      # Built+pushed by images.yml; tag must match observability_grafana.go.
+      - ghcr.io/neverinstall/sovereign-grafana:11.4.0-vmlogs-0.28.0
+      - prom/alertmanager:v0.27.0
+      - prom/blackbox-exporter:v0.25.0
+      # Exporters / collectors scraped or fed by the stack
+      - prom/node-exporter:v1.8.2
+      - registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.18.0
+      - timberio/vector:0.43.1-debian
+      - otel/opentelemetry-collector-contrib:0.152.1
+
+  fluentbit:
+    name: Fluent Bit
+    docs: "https://docs.fluentbit.io/manual"
+    chart_repo: https://fluent.github.io/helm-charts
+    chart_name: fluent-bit
+    version: "0.57.2"
+    namespace: logging
+    images:
+      - fluent/fluent-bit:5.0.2
+
+  chaos_mesh:
+    name: Chaos Mesh
+    docs: "https://chaos-mesh.org/docs/"
+    chart_repo: https://charts.chaos-mesh.org
+    chart_name: chaos-mesh
+    version: "2.8.2"
+    namespace: chaos-mesh
+    staging_only: true
+    images:
+      - ghcr.io/chaos-mesh/chaos-mesh:v2.8.2
+      - ghcr.io/chaos-mesh/chaos-daemon:v2.8.2
+      - ghcr.io/chaos-mesh/chaos-dashboard:v2.8.2
+
+  # Harbor — managed container registry (PRD: docs/prds/managed-container-registry.md).
+  # One shared instance per cluster; per-tenant isolation via Harbor projects.
+  # Storage: Ceph RGW (harbor-blobs ObjectBucketClaim against ceph-bucket
+  # storage class — see deploy/manifests/rook-ceph/cluster-values-sovereign.yaml).
+  # Postgres: existing CNPG operator (separate Cluster harbor-pg, not bundled).
+  # Redis: bundled with the Harbor chart in HA mode (chart.redis.internal=true).
+  # IdP: existing Keycloak via OIDC (configured by phaseInstallHarbor).
+  # Version policy: one Harbor major per Sovereign release; security patches in-version.
+  harbor:
+    name: Harbor
+    docs: "https://goharbor.io/docs/"
+    chart_repo: https://helm.goharbor.io
+    chart_name: harbor
+    version: "1.19.1"
+    namespace: harbor-system
+    images:
+      - goharbor/harbor-core:v2.15.1
+      - goharbor/harbor-jobservice:v2.15.1
+      - goharbor/harbor-portal:v2.15.1
+      - goharbor/harbor-registryctl:v2.15.1
+      - goharbor/registry-photon:v2.15.1
+      - goharbor/trivy-adapter-photon:v2.15.1
+      - goharbor/redis-photon:v2.15.1
+      - goharbor/harbor-exporter:v2.15.1
+
+  console_gateway:
+    name: KubeVirt Console Gateway
+    docs: "https://github.com/neverinstall/kubevirt-console-gateway"
+    chart_repo: oci://ghcr.io/neverinstall/charts
+    chart_name: console-gateway
+    version: "0.1.6"
+    namespace: console-system
+    images:
+      - ghcr.io/neverinstall/console-gateway:0.1.6
+      - ghcr.io/neverinstall/console-agent:0.1.6
+
+  # sovereign-libguestfs — self-contained libguestfs runtime (binaries +
+  # appliance) for the snapshot-promote virt-sysprep Pod and the
+  # restore re-key Job. Built and pushed by images-libguestfs.yml, which
+  # tags every push with the full commit SHA — that SHA tag is the pin
+  # here (immutable in practice; a digest pin can't be used because the
+  # docker-archive transport bom-sync writes requires a tagged ref, and
+  # decompress-on-write changes the manifest digest anyway). The workers
+  # receive this exact ref via the installer ldflag → worker env
+  # SOVEREIGN_LIBGUESTFS_IMAGE (see Makefile LIBGUESTFS_IMG). Bump by
+  # pointing at a newer images-libguestfs.yml build.
+  #
+  # compress_images: the appliance layer is ~5.4 GB of mostly-sparse
+  # bytes uncompressed (~0.5 GB gzipped). Without this flag the bundle
+  # overflows the qcow2 root partition — see the 2026-08-19 build
+  # failures. phaseImportImages stream-gunzips .tar.gz bundles.
+  sovereign_libguestfs:
+    name: Sovereign libguestfs runtime
+    docs: "docs/notes/snapshot-promote-linux-appliance.md"
+    version: "57cd0b116242cbd6f0df513617bde8ce576a80e4"
+    compress_images: true
+    images:
+      - ghcr.io/neverinstall/sovereign-libguestfs:57cd0b116242cbd6f0df513617bde8ce576a80e4
+
+  # cosign — supply-chain signing CLI. Bundled into the ISO so air-gapped
+  # operators can verify/sign images and SBOMs without internet egress.
+  # Harbor exposes the verify-on-pull policy that consumes signatures; this
+  # binary is the operator-side companion plus the in-cluster admission
+  # helpers (sigstore policy-controller manifests) shipped with the registry.
+  cosign:
+    version: "2.5.0"
+    docs: "https://docs.sigstore.dev/cosign/system_config/installation/"
+    url: "https://github.com/sigstore/cosign/releases/download/v2.5.0/cosign-{{ .OS }}-{{ .Arch }}"
+    sha256:
+      amd64: ""
+      arm64: ""
+
+# Kata Containers + Cloud Hypervisor — sandboxed pod runtime for the Container
+# Service (ADR-013, supersedes Firecracker). The single static tarball bundles
+# the containerd-shim-kata-v2 shim, guest kernel, rootfs image, the
+# cloud-hypervisor binary, and configuration-clh.toml, all under `opt/kata/`.
+# phaseInstallKataCLH extracts it at / (→ /opt/kata); the code globs
+# `kata-static-*.tar.zst` in the binaries dir. The asset is zstd-compressed
+# (.tar.zst) with an `amd64`/`arm64` arch suffix.
+kata:
+  version: "3.31.0"
+  docs: "https://github.com/kata-containers/kata-containers/blob/main/docs/how-to/containerd-kata.md"
+  runtime_class: "kata-clh"       # RuntimeClass name registered by the installer
+  install_dir: "/opt/kata"
+  binaries:
+    kata-static:
+      url: "https://github.com/kata-containers/kata-containers/releases/download/3.31.0/kata-static-3.31.0-{{ .Arch }}.tar.zst"
+      sha256:
+        amd64: "68c2786a0b97023f62f3eca02dc868b78a794e5469d4ddd6cc9e0bd4a7212b0b"
+        arm64: "42a7e67a2c2bf3e97a615c99a293b2bc01ea9c84111fc2bf4abeedb7adc9c2ac"

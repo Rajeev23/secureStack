@@ -1,0 +1,12 @@
+.git
+.github
+.next
+node_modules
+.pnpm-store
+*.log
+.env*
+!.env.example
+coverage
+tests
+agent-transcripts
+canvases
