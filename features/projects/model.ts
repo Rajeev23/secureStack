@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+/** Keep in sync with MAX_WATCH_FILES on the server. */
+export const MAX_PROJECT_WATCH_FILES = 80;
+
 export const projectRepositorySchema = z.object({
   provider: z.literal("github"),
   repositoryId: z.string(),
@@ -17,6 +20,9 @@ export const projectSchema = z.object({
   status: z.enum(["active", "archived"]),
   monitoringEnabled: z.boolean().optional(),
   environment: z.enum(["production", "staging", "development", "unknown"]).optional(),
+  scanMode: z.enum(["full", "selected"]).default("full"),
+  files: z.array(z.string()).default([]),
+  scanScopeConfigured: z.boolean().default(true),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -32,10 +38,39 @@ export function projectNeedsGithubConnect(project: Pick<Project, "repositories">
   return project.repositories.length === 0;
 }
 
-export function projectHomeHref(project: Pick<Project, "id" | "repositories">): string {
-  return projectNeedsGithubConnect(project)
+export function projectNeedsConnectSetup(
+  project: Pick<Project, "repositories" | "scanScopeConfigured">,
+): boolean {
+  if (projectNeedsGithubConnect(project)) return true;
+  return project.scanScopeConfigured === false;
+}
+
+export function projectOverviewHref(projectId: string, options?: { skipConnect?: boolean }): string {
+  const path = `/projects/${projectId}/overview`;
+  return options?.skipConnect ? `${path}?connect=skip` : path;
+}
+
+export function projectInventoryHref(projectId: string): string {
+  return `/projects/${projectId}/inventory`;
+}
+
+export function projectScansHref(projectId: string): string {
+  return `/projects/${projectId}/scans`;
+}
+
+export function projectInventoryItemHref(projectId: string, name: string): string {
+  const slug = name.split("/").map((part) => encodeURIComponent(part)).join("/");
+  return `/projects/${projectId}/inventory/${slug}`;
+}
+
+export function inventoryNameFromSegments(segments: string[]): string {
+  return segments.map((part) => decodeURIComponent(part)).join("/");
+}
+
+export function projectHomeHref(project: Pick<Project, "id" | "repositories" | "scanScopeConfigured">): string {
+  return projectNeedsConnectSetup(project)
     ? `/projects/${project.id}/connect`
-    : `/projects/${project.id}`;
+    : projectOverviewHref(project.id);
 }
 
 export const githubRepoSchema = z.object({
@@ -49,3 +84,11 @@ export const githubRepoSchema = z.object({
 });
 
 export type GithubRepo = z.infer<typeof githubRepoSchema>;
+
+export const githubFileSearchSchema = z.object({
+  files: z.array(z.string()),
+  truncated: z.boolean(),
+  matched: z.number(),
+});
+
+export type GithubFileSearch = z.infer<typeof githubFileSearchSchema>;

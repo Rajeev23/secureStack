@@ -147,12 +147,12 @@ describe("company-scoped project access", () => {
   });
 });
 
-describe("company-scoped finding access", () => {
-  it("rejects updating a finding that belongs to another company", async () => {
+describe("finding status", () => {
+  it("rejects status updates until findings are persisted", async () => {
     const { updateFindingStatus } = await import("@/services/api/findings");
     await expect(updateFindingStatus("user-a", "finding-b", "ACKNOWLEDGED")).rejects.toMatchObject({
       name: "DomainError",
-      status: 404,
+      status: 501,
     });
   });
 });

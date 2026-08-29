@@ -13,6 +13,7 @@ import { useSidebarStore } from "@/stores/sidebar-store";
 import { useLayoutStore } from "@/stores/layout-store";
 import { useCommandMenuStore } from "@/stores/command-menu-store";
 import { getBreadcrumbsFromPath } from "@/lib/breadcrumbs";
+import { useProjectNameMap } from "@/features/projects/hooks/use-projects";
 import { cn } from "@/lib/utils";
 
 const CommandMenu = dynamic(
@@ -35,6 +36,7 @@ function AppShellContent({ children }: AppShellProps) {
   const { isOpen, setOpen } = useSidebarStore();
   const { contentLayout } = useLayoutStore();
   const { addRecentPage } = useCommandMenuStore();
+  const projectNames = useProjectNameMap();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -44,12 +46,12 @@ function AppShellContent({ children }: AppShellProps) {
   useEffect(() => {
     if (isNotFound) return;
 
-    const crumbs = getBreadcrumbsFromPath(pathname ?? "/");
+    const crumbs = getBreadcrumbsFromPath(pathname ?? "/", { projectNames });
     const current = crumbs[crumbs.length - 1];
-    if (current?.href) {
-      addRecentPage({ title: current.label, href: current.href });
+    if (current) {
+      addRecentPage({ title: current.label, href: current.href ?? pathname ?? "/" });
     }
-  }, [pathname, addRecentPage, isNotFound]);
+  }, [pathname, addRecentPage, isNotFound, projectNames]);
 
   return (
     <SidebarProvider open={isOpen} onOpenChange={setOpen}>

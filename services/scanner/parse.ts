@@ -561,35 +561,115 @@ export function parseComposerLock(content: string, sourceFile: string): Detected
 }
 
 export function parseManifest(path: string, content: string): DetectedComponent[] {
-  const base = manifestBasename(path);
   try {
-    if (base === "package.json") return parsePackageJson(content, path);
-    if (base === "package-lock.json") return parsePackageLock(content, path);
-    if (base === "yarn.lock") return parseYarnLock(content, path);
-    if (base === "pnpm-lock.yaml") return parsePnpmLock(content, path);
-    if (base === "requirements.txt") return parseRequirementsTxt(content, path);
-    if (base === "Pipfile") return parsePipfile(content, path);
-    if (base === "pyproject.toml") return parsePyproject(content, path);
-    if (base === "poetry.lock") return parsePoetryLock(content, path);
-    if (base === "go.mod") return parseGoMod(content, path);
-    if (base === "Cargo.toml") return parseCargoToml(content, path);
-    if (base === "Cargo.lock") return parseCargoLock(content, path);
-    if (base === "Gemfile") return parseGemfile(content, path);
-    if (base === "Gemfile.lock") return parseGemfileLock(content, path);
-    if (base === "composer.json") return parseComposerJson(content, path);
-    if (base === "composer.lock") return parseComposerLock(content, path);
-    if (base === "pom.xml") return parsePomXml(content, path);
-    if (base === "build.gradle" || base === "build.gradle.kts") return parseGradle(content, path);
-    if (base === "Dockerfile" || base.startsWith("Dockerfile.")) return parseDockerfile(content, path);
-    if (base === "docker-compose.yml" || base === "docker-compose.yaml") {
-      return parseCompose(content, path);
-    }
-    if (isVersionCatalogPath(path)) return parseVersionCatalog(content, path);
-    if (isVersionCatalogCandidatePath(path) && looksLikeVersionCatalog(content)) {
-      return parseVersionCatalog(content, path);
-    }
+    const named = parseManifestByBasename(path, content);
+    if (named) return named;
+    return parseManifestByContent(path, content);
   } catch {
     return [];
+  }
+}
+
+function parseManifestByBasename(path: string, content: string): DetectedComponent[] | null {
+  const base = manifestBasename(path);
+  if (base === "package.json") return parsePackageJson(content, path);
+  if (base === "package-lock.json") return parsePackageLock(content, path);
+  if (base === "yarn.lock") return parseYarnLock(content, path);
+  if (base === "pnpm-lock.yaml") return parsePnpmLock(content, path);
+  if (base === "requirements.txt") return parseRequirementsTxt(content, path);
+  if (base === "Pipfile") return parsePipfile(content, path);
+  if (base === "pyproject.toml") return parsePyproject(content, path);
+  if (base === "poetry.lock") return parsePoetryLock(content, path);
+  if (base === "go.mod") return parseGoMod(content, path);
+  if (base === "Cargo.toml") return parseCargoToml(content, path);
+  if (base === "Cargo.lock") return parseCargoLock(content, path);
+  if (base === "Gemfile") return parseGemfile(content, path);
+  if (base === "Gemfile.lock") return parseGemfileLock(content, path);
+  if (base === "composer.json") return parseComposerJson(content, path);
+  if (base === "composer.lock") return parseComposerLock(content, path);
+  if (base === "pom.xml") return parsePomXml(content, path);
+  if (base === "build.gradle" || base === "build.gradle.kts") return parseGradle(content, path);
+  if (base === "Dockerfile" || base.startsWith("Dockerfile.")) return parseDockerfile(content, path);
+  if (base === "docker-compose.yml" || base === "docker-compose.yaml") {
+    return parseCompose(content, path);
+  }
+  if (isVersionCatalogPath(path)) return parseVersionCatalog(content, path);
+  if (isVersionCatalogCandidatePath(path)) {
+    return looksLikeVersionCatalog(content) ? parseVersionCatalog(content, path) : [];
+  }
+  return null;
+}
+
+/** Custom filenames (company-specific bom.yaml, renamed package.json, …). */
+function parseManifestByContent(path: string, content: string): DetectedComponent[] {
+  const trimmed = content.trim();
+  if (!trimmed) return [];
+
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+    return parseJsonByShape(path, content);
+  }
+
+  if (/^module\s+\S+/m.test(trimmed)) {
+    return parseGoMod(content, path);
+  }
+  if (/^\s*FROM\s+/im.test(trimmed) && !looksLikeVersionCatalog(content)) {
+    const docker = parseDockerfile(content, path);
+    if (docker.length) return docker;
+  }
+  if (/^\s*gem\s+["']/m.test(trimmed)) {
+    return parseGemfile(content, path);
+  }
+  if (/^GEM\s*$/m.test(trimmed) && /specs:/.test(trimmed)) {
+    return parseGemfileLock(content, path);
+  }
+  if (/\[dependencies\]/.test(trimmed) || /\[\[package\]\]/.test(trimmed)) {
+    if (/\[\[package\]\]/.test(trimmed)) return parseCargoLock(content, path);
+    return parseCargoToml(content, path);
+  }
+  if (/\[project\]/.test(trimmed) || /\[tool\.poetry\]/.test(trimmed)) {
+    return parsePyproject(content, path);
+  }
+  if (/lockfileVersion\s*:/.test(trimmed)) {
+    return parsePnpmLock(content, path);
+  }
+  if (/^\s*image\s*:/m.test(trimmed) && /services\s*:/.test(trimmed)) {
+    return parseCompose(content, path);
+  }
+  if (looksLikeVersionCatalog(content)) {
+    return parseVersionCatalog(content, path);
+  }
+  if (/^[A-Za-z0-9_.-]+\s*==\s*\S+/m.test(trimmed)) {
+    return parseRequirementsTxt(content, path);
+  }
+  if (/<project[\s>]/.test(trimmed) && /<dependency>/.test(trimmed)) {
+    return parsePomXml(content, path);
+  }
+  if (/(?:implementation|api|compileOnly)\s*[\('"]/.test(trimmed)) {
+    return parseGradle(content, path);
+  }
+  return [];
+}
+
+function parseJsonByShape(path: string, content: string): DetectedComponent[] {
+  let json: unknown;
+  try {
+    json = JSON.parse(content);
+  } catch {
+    return [];
+  }
+  if (!json || typeof json !== "object") return [];
+  const record = json as Record<string, unknown>;
+  if (record.dependencies || record.devDependencies || record.optionalDependencies) {
+    return parsePackageJson(content, path);
+  }
+  if (record.packages && typeof record.packages === "object" && !Array.isArray(record.packages)) {
+    return parsePackageLock(content, path);
+  }
+  if (Array.isArray(record.packages) || Array.isArray(record["packages-dev"])) {
+    return parseComposerLock(content, path);
+  }
+  if (record.require || record["require-dev"]) {
+    return parseComposerJson(content, path);
   }
   return [];
 }

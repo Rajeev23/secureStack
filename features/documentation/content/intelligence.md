@@ -1,7 +1,7 @@
 ---
 title: Findings & intelligence
-description: After a scan, SecureStack checks latest versions, GitHub release notes, OSV/NVD CVE aliases, and end-of-life status, then writes findings and an update recommendation.
-lastUpdated: 2026-08-28
+description: After a scan, SecureStack checks latest versions, GitHub release notes, OSV/NVD CVE aliases, and end-of-life status, then shows findings from that snapshot.
+lastUpdated: 2026-08-29
 related:
   - href: /documentation/scanning
     title: Scanning & inventory
@@ -25,11 +25,10 @@ Start Scan
   → EOL (endoflife.date)
   → Recommendation (Update urgently / Update / Review / Wait)
   → Impact + P1–P4 (environment, security, breaking, age of fix)
-  → Write findings
-  → Project page (Inventory / Updates / What’s changed / Findings)
+  → Project page (`/projects/:id/overview`, Inventory, Scans)
 ```
 
-No extra SQL. Findings use the existing `findings` table. Release intelligence is stored on `scans.result_snapshot.components`. Intelligence is fetched live from external APIs; SecureStack does not store a global CVE database.
+No extra SQL. Findings are derived from the latest `scans.result_snapshot` when you open the page. They are not inserted into the `findings` table. Status (ignored / accepted risk) is not stored yet. Release intelligence lives on `scans.result_snapshot.components`. Intelligence is fetched live from external APIs; SecureStack does not store a global CVE database.
 
 ## Sources
 
@@ -51,13 +50,15 @@ If a feed is unreachable, the scan still completes with the GitHub inventory.
 | `review` | Major version or breaking-change language in the notes |
 | `wait` | Minor update with no known security issue and no meaningful change notes |
 
-Click a component on Inventory, Updates, or What’s changed to see current → new, categorized changes, security, and the recommendation.
+Open a package from Inventory (`/projects/:id/inventory/:name`) to see current → new, categorized changes, security, findings, and the recommendation.
+
+The inventory table splits rank from action. **Priority** is P1–P4 (hover for why). **Status** is one action chip — Update urgently, Review required, Update recommended, or Up to date — plus a CVE count when OSV matched. Major/minor bump size is not repeated next to the action. **Impact** stays its own column.
 
 Default Inventory and Updates views show **infra** (version catalogs such as `bom.yaml`, Docker images) and **direct** dependencies from package manifests. Transitive lockfile packages appear only when they have a CVE; other transitive bumps are grouped by parent. Users should not have to inspect hundreds of `node_modules` helpers.
 
-Updates are ranked **P1–P4**. Hover a P chip for “Why is this P1?”. Score uses severity (CVE / security notes), production usage, breaking changes, and how long the fix has been available. **Impact** is Low / Medium / High / Critical from the same inputs. Production + a security fix shows **Update within 7 days**. The project **environment** (production / staging / development) is stored on `projects.monitoring` and applied when inventory is loaded, so changing environment re-ranks without a new scan.
+Updates are ranked **P1–P4**. Score uses severity (CVE / security notes), production usage, breaking changes, and how long the fix has been available. **Impact** is Low / Medium / High / Critical from the same inputs. Production + a security fix shows **Update within 7 days**. The project **environment** (production / staging / development) is stored on `projects.monitoring` and applied when inventory is loaded, so changing environment re-ranks without a new scan.
 
-Findings that disappear on the next scan (the version was updated) are auto-closed as `RESOLVED`.
+Findings refresh from the latest scan. If a version is updated, that CVE or outdated-package row disappears on the next scan. Finding status (ignored / accepted risk) is not stored yet.
 
 ## Coverage limits
 
@@ -77,17 +78,15 @@ OSV `/v1/querybatch` is sent in chunks of 150 packages.
 
 Recommendation text always includes the current version and the upgrade target when known.
 
-Issue type, severity, finding status, inventory version status, recommendation kind, and EOL chips all read from `config/issue-palette.ts`.
+Issue type, severity, finding status, inventory version status, recommendation kind, and EOL chips all read from `config/issue-palette.ts`. Colors come from shared `TOKENS` (critical, danger, warning, caution, info, success, special, neutral). Change a token there and every chip updates.
 
 ## APIs
 
 | Request | Result |
 | --- | --- |
-| `GET /api/findings` | Open findings for the company |
-| `GET /api/projects/:id/findings` | Findings for one project (all statuses) |
-| `PATCH /api/findings/:id` | Update finding status |
+| `GET /api/findings` | Findings from each project’s latest completed scan |
+| `GET /api/projects/:id/findings` | Findings for one project, from its latest scan |
+| `PATCH /api/findings/:id` | Not stored yet (`501`) |
 | `GET /api/dashboard/stats` | Update intelligence counts plus recent updates from the latest scans |
 
-Change status in the project **Findings** tab. `IGNORED` and `ACCEPTED_RISK` stay closed on the next scan; `RESOLVED` can reopen if the issue is detected again. See [Scheduled monitoring](/documentation/monitoring).
-
-Re-run **Start Scan** on an existing project to populate findings and release notes for the first time.
+Status changes are not saved. Re-run **Start Scan** on an existing project to refresh findings and release notes.

@@ -6,7 +6,7 @@ import { withProjectImpact } from "@/services/intelligence/impact";
 import { withInferredTier } from "@/services/intelligence/visibility";
 import { recommendationKindFromComponent, sortAvailableUpdates, summarizeUpdateIntel } from "@/services/intelligence/summarize";
 import { getCompanyContext } from "@/services/api/company";
-import { listFindingHistoryForCompany, listOpenFindingsForCompany } from "@/services/api/findings";
+import { listOpenFindingsForCompany } from "@/services/api/findings";
 import { listProjects } from "@/services/api/projects";
 import { listLatestCompletedScansForProjects, listLatestScans, type ScanPublic } from "@/services/api/scans";
 
@@ -53,7 +53,7 @@ export async function GET() {
   try {
     const projects = await listProjects(session.userId);
     const context = await getCompanyContext(session.userId);
-    const [scans, findings, latestCompleted, history] = await Promise.all([
+    const [scans, findings, latestCompleted] = await Promise.all([
       listLatestScans(
         session.userId,
         projects.map((project) => project.id),
@@ -63,7 +63,6 @@ export async function GET() {
         session.userId,
         projects.map((project) => project.id),
       ),
-      listFindingHistoryForCompany(session.userId),
     ]);
 
     const inventory = [...latestCompleted.values()].flatMap((scan) => {
@@ -97,23 +96,8 @@ export async function GET() {
       }
     }
 
-    const weekAgo = Date.now() - 7 * 86_400_000;
-    const resolved = history.filter((finding) => finding.status === "RESOLVED" && finding.resolvedAt);
-    const resolvedLast7Days = resolved.filter(
-      (finding) => Date.parse(finding.resolvedAt ?? "") >= weekAgo,
-    ).length;
-    const resolveHours = resolved
-      .map((finding) => {
-        const start = Date.parse(finding.firstDetectedAt);
-        const end = Date.parse(finding.resolvedAt ?? "");
-        if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) return null;
-        return (end - start) / 3_600_000;
-      })
-      .filter((value): value is number => value != null);
-    const meanTimeToResolveHours =
-      resolveHours.length > 0
-        ? Math.round(resolveHours.reduce((sum, value) => sum + value, 0) / resolveHours.length)
-        : null;
+    const resolvedLast7Days = 0;
+    const meanTimeToResolveHours: number | null = null;
 
     const recentScans = scans.slice(0, 8).map((scan) => {
       const project = projects.find((item) => item.id === scan.projectId);
@@ -169,11 +153,8 @@ export async function GET() {
         {
           label: "Auto-resolved (7d)",
           value: formatMetricCount(resolvedLast7Days),
-          change:
-            meanTimeToResolveHours != null
-              ? `Mean time to close ${meanTimeToResolveHours}h`
-              : "Findings close when the version is updated",
-          trend: resolvedLast7Days > 0 ? "up" : "neutral",
+          change: "Finding status is not stored yet",
+          trend: "neutral",
         },
       ],
       projects,

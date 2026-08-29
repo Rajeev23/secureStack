@@ -6,6 +6,38 @@ import {
   VersionStatusChip,
 } from "@/components/shared/issue-chip";
 
+export type InventoryStatusItem =
+  | { type: "cve"; cves: string[] }
+  | { type: "eol"; status: string }
+  | { type: "recommendation"; kind: string }
+  | { type: "version"; status: string };
+
+export function inventoryTableStatus(input: {
+  cves?: string[];
+  versionStatus?: string | null;
+  latestVersion?: string | null;
+  eolStatus?: string | null;
+  recommendationKind?: string | null;
+}): InventoryStatusItem[] {
+  const items: InventoryStatusItem[] = [];
+  if (input.cves?.length) items.push({ type: "cve", cves: input.cves });
+  if (input.eolStatus === "eol" || input.eolStatus === "approaching") {
+    items.push({ type: "eol", status: input.eolStatus });
+  }
+  if (input.recommendationKind) {
+    items.push({ type: "recommendation", kind: input.recommendationKind });
+    return items;
+  }
+  if (input.versionStatus && input.versionStatus !== "up_to_date" && input.versionStatus !== "unknown") {
+    items.push({ type: "version", status: input.versionStatus });
+    return items;
+  }
+  if (input.latestVersion || input.versionStatus === "up_to_date") {
+    items.push({ type: "version", status: "up_to_date" });
+  }
+  return items;
+}
+
 type IntelligenceBadgesProps = {
   cves?: string[];
   versionStatus?: string | null;
@@ -14,6 +46,8 @@ type IntelligenceBadgesProps = {
   recommendationKind?: string | null;
   priority?: string | null;
   priorityWhy?: string | null;
+  /** Table rows: no P-chip (that is its own column) and no minor/major next to a recommendation. */
+  variant?: "table" | "full";
 };
 
 export function IntelligenceBadges({
@@ -24,7 +58,31 @@ export function IntelligenceBadges({
   recommendationKind,
   priority,
   priorityWhy,
+  variant = "full",
 }: IntelligenceBadgesProps) {
+  if (variant === "table") {
+    const items = inventoryTableStatus({
+      cves,
+      versionStatus,
+      latestVersion,
+      eolStatus,
+      recommendationKind,
+    });
+    if (items.length === 0) return <span className="text-muted-foreground">—</span>;
+    return (
+      <span className="flex max-w-52 flex-wrap gap-1">
+        {items.map((item) => {
+          if (item.type === "cve") return <CveChip key="cve" cves={item.cves} />;
+          if (item.type === "eol") return <EolStatusChip key="eol" status={item.status} />;
+          if (item.type === "recommendation") {
+            return <RecommendationKindChip key="rec" kind={item.kind} />;
+          }
+          return <VersionStatusChip key="version" status={item.status} />;
+        })}
+      </span>
+    );
+  }
+
   const badges = [];
   if (priority) {
     badges.push(

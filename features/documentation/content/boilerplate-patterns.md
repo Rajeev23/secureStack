@@ -1,7 +1,7 @@
 ---
 title: Project patterns
 description: Copy these when you add a feature — routes, nav, and reference pages.
-lastUpdated: 2026-08-28
+lastUpdated: 2026-08-29
 related:
   - href: /documentation/layout/sidebar
     title: Sidebar
@@ -67,10 +67,10 @@ Put shared client API helpers in `lib/api/`. Put GitHub, scan, and intelligence 
 | --- | --- |
 | `features/dashboard/` | Greeting (first name + company subtitle), TanStack Query, scan-backed component counts |
 | `features/onboarding/` | Company name setup after signup |
-| `features/projects/` | Create project, GitHub OAuth, one repository per project, Start Scan, inventory / updates / findings / scans tabs |
-| `features/inventory/` | Project inventory UI reused on the project page |
-| `features/updates/` | Outdated packages vs latest release (project tab) |
-| `features/findings/` | Security / update / EOL findings table (project tab) |
+| `features/projects/` | Create project, GitHub OAuth, one repository per project, full-repo or selected-file scan, Start Scan, Overview / Inventory / Scans |
+| `features/inventory/` | Project inventory list; package pages at `/projects/:id/inventory/:name` |
+| `features/updates/` | Company-wide outdated packages (links to the package page) |
+| `features/findings/` | Security / update / EOL findings table (links to the package page) |
 | `features/scans/` | Scan hooks and `/api/projects/:id/scans` client |
 | `features/settings/` | Nested routes: Account, Company, Preferences |
 

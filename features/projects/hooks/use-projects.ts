@@ -1,9 +1,11 @@
+import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   connectProjectRepositories,
   createProject,
   deleteProject,
   fetchGithubRepositories,
+  fetchGithubRepositoryFiles,
   fetchProject,
   fetchProjects,
   updateProjectMonitoring,
@@ -15,6 +17,17 @@ export function useProjects() {
     queryKey: ["projects"],
     queryFn: fetchProjects,
   });
+}
+
+export function useProjectNameMap(): Record<string, string> {
+  const { data } = useProjects();
+  return useMemo(() => {
+    const names: Record<string, string> = {};
+    for (const project of data ?? []) {
+      names[project.id] = project.name;
+    }
+    return names;
+  }, [data]);
 }
 
 export function useProject(id: string | undefined) {
@@ -39,8 +52,11 @@ export function useCreateProject() {
 export function useConnectRepositories(projectId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (repositories: Project["repositories"]) =>
-      connectProjectRepositories(projectId, repositories),
+    mutationFn: (input: {
+      repositories: Project["repositories"];
+      scanMode?: Project["scanMode"];
+      files?: string[];
+    }) => connectProjectRepositories(projectId, input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["projects"] });
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
@@ -51,8 +67,12 @@ export function useConnectRepositories(projectId: string) {
 export function useUpdateProjectMonitoring(projectId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (patch: { monitoringEnabled?: boolean; environment?: Project["environment"] }) =>
-      updateProjectMonitoring(projectId, patch),
+    mutationFn: (patch: {
+      monitoringEnabled?: boolean;
+      environment?: Project["environment"];
+      scanMode?: Project["scanMode"];
+      files?: string[];
+    }) => updateProjectMonitoring(projectId, patch),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["projects"] });
     },
@@ -91,6 +111,18 @@ export function useGithubRepositories(enabled: boolean) {
     queryKey: ["github", "repositories"],
     queryFn: fetchGithubRepositories,
     enabled,
+    retry: false,
+  });
+}
+
+export function useGithubRepositoryFiles(
+  input: { fullName: string; branch: string; query: string } | null,
+) {
+  return useQuery({
+    queryKey: ["github", "repository-files", input?.fullName, input?.branch, input?.query],
+    queryFn: () => fetchGithubRepositoryFiles(input as { fullName: string; branch: string; query: string }),
+    enabled: Boolean(input?.fullName && input?.branch),
+    staleTime: 30_000,
     retry: false,
   });
 }

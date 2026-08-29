@@ -20,31 +20,34 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 }
 
-const connectSchema = z.object({
-  repositories: z
-    .array(
-      z.object({
-        provider: z.literal("github"),
-        repositoryId: z.string().min(1),
-        fullName: z.string().min(1),
-        url: z.string().url(),
-        branch: z.string().min(1),
-      }),
-    )
-    .length(1, "Connect one GitHub repository."),
-});
-
-const patchSchema = z.union([
-  connectSchema,
-  z
-    .object({
-      monitoringEnabled: z.boolean().optional(),
-      environment: z.enum(["production", "staging", "development", "unknown"]).optional(),
-    })
-    .refine((value) => value.monitoringEnabled !== undefined || value.environment !== undefined, {
-      message: "No changes provided.",
-    }),
-]);
+const patchSchema = z
+  .object({
+    repositories: z
+      .array(
+        z.object({
+          provider: z.literal("github"),
+          repositoryId: z.string().min(1),
+          fullName: z.string().min(1),
+          url: z.string().url(),
+          branch: z.string().min(1),
+        }),
+      )
+      .length(1, "Connect one GitHub repository.")
+      .optional(),
+    scanMode: z.enum(["full", "selected"]).optional(),
+    files: z.array(z.string().max(400)).max(80).optional(),
+    monitoringEnabled: z.boolean().optional(),
+    environment: z.enum(["production", "staging", "development", "unknown"]).optional(),
+  })
+  .refine(
+    (value) =>
+      value.repositories !== undefined ||
+      value.scanMode !== undefined ||
+      value.files !== undefined ||
+      value.monitoringEnabled !== undefined ||
+      value.environment !== undefined,
+    { message: "No changes provided." },
+  );
 
 export async function PATCH(request: Request, context: RouteContext) {
   const session = await requireSession();
@@ -61,13 +64,32 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   try {
-    if ("repositories" in parsed.data) {
-      const project = await attachProjectRepositories(session.userId, id, parsed.data.repositories);
+    if (parsed.data.repositories) {
+      const project = await attachProjectRepositories(
+        session.userId,
+        id,
+        parsed.data.repositories,
+        parsed.data.scanMode
+          ? { scanMode: parsed.data.scanMode, files: parsed.data.files }
+          : undefined,
+      );
+      if (
+        parsed.data.monitoringEnabled !== undefined ||
+        parsed.data.environment !== undefined
+      ) {
+        const updated = await updateProjectMonitoring(session.userId, id, {
+          enabled: parsed.data.monitoringEnabled,
+          environment: parsed.data.environment,
+        });
+        return NextResponse.json({ project: updated });
+      }
       return NextResponse.json({ project });
     }
     const project = await updateProjectMonitoring(session.userId, id, {
       enabled: parsed.data.monitoringEnabled,
       environment: parsed.data.environment,
+      scanMode: parsed.data.scanMode,
+      files: parsed.data.files,
     });
     return NextResponse.json({ project });
   } catch (error) {

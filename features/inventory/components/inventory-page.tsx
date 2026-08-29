@@ -3,20 +3,19 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ErrorState } from "@/components/feedback/ErrorState";
-import { DependencyTierChip, EnvironmentChip } from "@/components/shared/issue-chip";
+import { DependencyTierChip, EnvironmentChip, PriorityChip } from "@/components/shared/issue-chip";
 import { PageHeader } from "@/components/shared/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { ComponentDetailDialog, type ComponentDetail } from "@/features/inventory/components/component-detail-dialog";
 import { IntelligenceBadges } from "@/features/inventory/components/intelligence-badges";
 import { TransitiveNote } from "@/features/inventory/components/transitive-note";
+import { projectInventoryItemHref, projectOverviewHref } from "@/features/projects/model";
 import { fetchInventory, type InventoryComponent } from "@/features/scans/api/client";
 import { useInventory } from "@/features/scans/hooks/use-scans";
 
 export function InventoryPage() {
   const [includeTransitive, setIncludeTransitive] = useState(false);
   const { data, isLoading, isError, refetch } = useInventory(undefined, includeTransitive);
-  const [selected, setSelected] = useState<ComponentDetail | null>(null);
   const [more, setMore] = useState<{ key: string; items: InventoryComponent[] }>({ key: "", items: [] });
   const [loadingMore, setLoadingMore] = useState(false);
 
@@ -46,7 +45,7 @@ export function InventoryPage() {
     <div className="dashboard-page space-y-6">
       <PageHeader
         title="Inventory"
-        description="Infrastructure pins and declared dependencies. Click a row for current → new, what changed, and the recommendation."
+        description="Infrastructure pins and declared dependencies. Open a package for current → new, what changed, and findings."
       />
 
       <TransitiveNote
@@ -78,6 +77,7 @@ export function InventoryPage() {
                 <th className="px-4 py-2 font-medium">Tier</th>
                 <th className="px-4 py-2 font-medium">Current</th>
                 <th className="px-4 py-2 font-medium">Latest</th>
+                <th className="px-4 py-2 font-medium">Priority</th>
                 <th className="px-4 py-2 font-medium">Status</th>
                 <th className="px-4 py-2 font-medium">Project</th>
                 <th className="px-4 py-2 font-medium">Env</th>
@@ -88,31 +88,44 @@ export function InventoryPage() {
                     {components.map((component) => (
                       <tr
                         key={`${component.projectId}:${component.repository}:${component.ecosystem}:${component.name}:${component.sourceFile}`}
-                        className="cursor-pointer border-b last:border-0 hover:bg-muted/40"
-                        onClick={() => setSelected(component)}
+                        className="border-b last:border-0 hover:bg-muted/40"
                       >
-                        <td className="px-4 py-2 font-medium">{component.name}</td>
+                        <td className="px-4 py-2 font-medium">
+                          <Link
+                            href={projectInventoryItemHref(component.projectId, component.name)}
+                            className="hover:text-primary hover:underline"
+                          >
+                            {component.name}
+                          </Link>
+                        </td>
                   <td className="px-4 py-2">
                     {component.tier ? <DependencyTierChip tier={component.tier} /> : "—"}
                   </td>
                   <td className="px-4 py-2 tabular-nums">{component.version}</td>
                   <td className="px-4 py-2 tabular-nums">{component.latestVersion ?? "—"}</td>
                   <td className="px-4 py-2">
+                    {component.priority ? (
+                      <span title={component.priorityWhy ?? undefined}>
+                        <PriorityChip priority={component.priority} />
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2">
                     <IntelligenceBadges
+                      variant="table"
                       cves={component.cves}
                       versionStatus={component.versionStatus}
                       latestVersion={component.latestVersion}
                       eolStatus={component.eolStatus}
                       recommendationKind={component.recommendationKind}
-                      priority={component.priority}
-                      priorityWhy={component.priorityWhy}
                     />
                   </td>
                   <td className="px-4 py-2">
                     <Link
-                      href={`/projects/${component.projectId}`}
+                      href={projectOverviewHref(component.projectId)}
                       className="text-primary hover:underline"
-                      onClick={(event) => event.stopPropagation()}
                     >
                       {component.projectName}
                     </Link>
@@ -148,8 +161,6 @@ export function InventoryPage() {
           </p>
         </div>
       )}
-
-      <ComponentDetailDialog component={selected} onOpenChange={(open) => !open && setSelected(null)} />
     </div>
   );
 }

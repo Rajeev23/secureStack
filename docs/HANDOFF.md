@@ -14,7 +14,7 @@
 | Repository scan + CycloneDX/SPDX SBOM upload | Stored on `scans.result_snapshot` |
 | Latest version, GitHub release notes, OSV/CVE, EOL, findings | External APIs; 400 unique packages (infra/direct first), 80 manifests, 40 release-note lookups per scan |
 | Dashboard counts, trends, P1 mix, What’s changed alerts | Actionable updates only (infra + direct + security transitives). P1–P4 + Update urgently / Update / Review / Wait |
-| Scheduled scans + finding auto-close | What’s changed is upstream current → latest. Scan-to-scan diff is on Scans → Since last scan |
+| Scheduled scans | What’s changed is upstream current → latest. Scan-to-scan diff is on Scans → Since last scan. Findings refresh from the latest snapshot (status not stored yet) |
 | Inventory default view | Infra pins (`bom.yaml` / `versions.yaml`) and declared dependencies. Hides routine lockfile / node_modules helpers; Show toggle lists them. Updates groups those bumps by parent |
 
 ## Quick start
@@ -92,7 +92,7 @@ features/<name>/
 **Reference implementations:**
 
 - `features/onboarding/` — company name after signup
-- `features/projects/` — create project, GitHub OAuth, one repository per project, Start Scan, inventory / updates / findings / scans on the project. Sidebar Projects appears after the first project. Two or more projects nest under sidebar Projects.
+- `features/projects/` — create project, GitHub OAuth, one repository per project, full-repo or selected-file scan scope, Start Scan, Overview / Inventory / Scans. Package detail is `/projects/:id/inventory/:name`. Sidebar Projects appears after the first project. Two or more projects nest under sidebar Projects.
 - `features/scans/` — scan APIs/hooks
 - `features/inventory/` — component list used on the project
 - `features/updates/` — outdated packages vs latest release
@@ -121,13 +121,13 @@ features/<name>/
 - Context: `GET /api/company/context`
 - Onboarding: `GET/POST /api/onboarding`
 - Company: `GET/PATCH /api/company`
-- Projects: `GET/POST /api/projects`, `GET/PATCH/DELETE /api/projects/:id`. A project with no repository reopens `/projects/:id/connect`.
-- GitHub: `GET /api/github/connect`, `GET /api/github/callback`, `GET /api/github/repositories`
+- Projects: `GET/POST /api/projects`, `GET/PATCH/DELETE /api/projects/:id`. A project with no repository, or with a repository but no scan scope yet, reopens `/projects/:id/connect`. After setup, `/projects/:id` redirects to `/projects/:id/overview`.
+- GitHub: `GET /api/github/connect`, `GET /api/github/callback`, `GET /api/github/repositories`, `GET /api/github/repository-files`
 - Scans: `POST/GET /api/projects/:id/scans`, `POST /api/projects/:id/sbom`, `GET /api/scans`, `GET /api/scans/:id`, `GET /api/projects/:id/components`
 - Scheduled scans: `POST /api/scans/scheduled` (this company), `GET/POST /api/cron/scans` (`CRON_SECRET`)
 - Inventory: `GET /api/inventory` (`offset` / `limit`, `outdated=1`, `transitive=1`)
-- Project components: `GET /api/projects/:id/components` (paginated default view; `transitive=1` includes lockfile noise; coverage, available updates, scan-to-scan diff)
-- Findings: `GET /api/findings`, `GET /api/projects/:id/findings`, `PATCH /api/findings/:id`
+- Project components: `GET /api/projects/:id/components` (paginated default view; `transitive=1` includes lockfile noise; `name` looks up one package; coverage, available updates, scan-to-scan diff)
+- Findings: `GET /api/findings`, `GET /api/projects/:id/findings` (from the latest scan snapshot). `PATCH /api/findings/:id` is `501` until status is stored.
 
 ### Settings forms
 
@@ -153,4 +153,4 @@ features/<name>/
 
 1. The TRD MVP (phases 1–4) is in this repository
 2. Keep docs in sync using `docs/DOC_MAP.md`
-3. Keep extra Phase 2+ fields in JSON (`companies.monitoring`, `projects.monitoring`, `scans.result_snapshot`) — do not add a sixth table unless volume requires it
+  3. Keep extra Phase 2+ fields in JSON (`companies.monitoring`, `projects.monitoring` including scan scope, `scans.result_snapshot`) — do not add a sixth table unless volume requires it

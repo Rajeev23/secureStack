@@ -38,7 +38,7 @@ export function ProjectsPage() {
     <div className="dashboard-page space-y-6">
       <PageHeader
         title="Projects"
-        description="Each project connects to one GitHub repository."
+        description="Each project connects to one GitHub repository. You can scan the whole repo or only the files you choose."
         actions={data?.length ? <AddProjectButton /> : undefined}
       />
 

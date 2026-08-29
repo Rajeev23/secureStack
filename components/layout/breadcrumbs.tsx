@@ -17,6 +17,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useIsNotFoundPage } from "@/components/feedback/not-found-context";
 import { getBreadcrumbsFromPath } from "@/lib/breadcrumbs";
 import { useCompanyContextStore } from "@/stores/company-context-store";
+import { useProjectNameMap } from "@/features/projects/hooks/use-projects";
 import { cn } from "@/lib/utils";
 
 type CrumbItem = { label: string; href?: string };
@@ -29,12 +30,13 @@ type BreadcrumbsProps = {
 export function Breadcrumbs({ className }: BreadcrumbsProps) {
   const pathname = usePathname() ?? "/";
   const company = useCompanyContextStore((state) => state.company);
+  const projectNames = useProjectNameMap();
   const isNotFound = useIsNotFoundPage();
   const isMobile = useIsMobile();
   const mounted = useIsClient();
 
   const items = useMemo<CrumbItem[]>(() => {
-    const routeItems = isNotFound ? [{ label: "404" }] : getBreadcrumbsFromPath(pathname);
+    const routeItems = isNotFound ? [{ label: "404" }] : getBreadcrumbsFromPath(pathname, { projectNames });
 
     const hierarchy: CrumbItem[] = [];
     if (company) {
@@ -49,7 +51,7 @@ export function Breadcrumbs({ className }: BreadcrumbsProps) {
     }
 
     return [...hierarchy, ...trail];
-  }, [company, isNotFound, pathname]);
+  }, [company, isNotFound, pathname, projectNames]);
 
   const visibleItems = useMemo<VisibleItem[]>(() => {
     if (mounted && isMobile && items.length > 2) {

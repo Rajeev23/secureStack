@@ -19,6 +19,11 @@ import { DashboardGreeting } from "@/features/dashboard/components/dashboard-gre
 import { DashboardPanel } from "@/features/dashboard/components/dashboard-panel";
 import { DashboardStatsGrid } from "@/features/dashboard/components/dashboard-stats-grid";
 import { useDashboardOverview } from "@/features/dashboard/hooks/use-dashboard-stats";
+import {
+  projectInventoryItemHref,
+  projectOverviewHref,
+  projectScansHref,
+} from "@/features/projects/model";
 import { SCAN_STATUS_PALETTE, lookupPalette } from "@/config/issue-palette";
 import { scanSourceLabel } from "@/lib/scan-source";
 
@@ -121,7 +126,7 @@ export function DashboardPage() {
             {data.changes.map((alert, index) => (
               <DashboardFeedRow
                 key={`${alert.projectId}:${alert.summary}:${index}`}
-                href={`/projects/${alert.projectId}`}
+                href={projectOverviewHref(alert.projectId)}
                 title={alert.summary}
                 subtitle={alert.projectName}
                 chips={
@@ -145,7 +150,7 @@ export function DashboardPage() {
             {recentUpdates.map((item) => (
               <DashboardFeedRow
                 key={`${item.projectId}:${item.ecosystem}:${item.name}:${item.sourceFile}`}
-                href={`/projects/${item.projectId}`}
+                href={projectInventoryItemHref(item.projectId, item.name)}
                 title={item.name}
                 subtitle={`${item.version}${item.latestVersion ? ` → ${item.latestVersion}` : ""} · ${item.projectName}${item.priority ? ` · ${item.priority}` : ""}`}
                 chips={
@@ -167,13 +172,13 @@ export function DashboardPage() {
         )}
       </DashboardPanel>
 
-      <DashboardPanel title="Open findings" description="Security, update, and EOL findings that are still open.">
+      <DashboardPanel title="Open findings" description="Security, update, and EOL issues from the latest scan.">
         {data.findings.length ? (
           <ul className="divide-y">
             {data.findings.slice(0, 8).map((finding) => (
               <DashboardFeedRow
                 key={finding.id}
-                href={`/projects/${finding.projectId}`}
+                href={projectInventoryItemHref(finding.projectId, finding.componentName)}
                 title={finding.componentName}
                 subtitle={`${finding.projectName ?? "Project"}${finding.currentVersion ? ` · ${finding.currentVersion}` : ""}${finding.recommendedVersion ? ` → ${finding.recommendedVersion}` : ""}`}
                 chips={
@@ -186,7 +191,7 @@ export function DashboardPage() {
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-muted-foreground">No open findings. Findings auto-close when the version is updated.</p>
+          <p className="text-sm text-muted-foreground">No open findings on the latest scan.</p>
         )}
       </DashboardPanel>
 
@@ -202,7 +207,7 @@ export function DashboardPage() {
               return (
                 <DashboardFeedRow
                   key={scan.id}
-                  href={`/projects/${scan.projectId}`}
+                  href={projectScansHref(scan.projectId)}
                   title={scan.projectName}
                   subtitle={
                     when

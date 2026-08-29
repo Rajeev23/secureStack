@@ -13,7 +13,7 @@ export function FindingsPage() {
     <div className="dashboard-page space-y-6">
       <PageHeader
         title="Findings"
-        description="Security advisories, outdated packages, and end-of-life software. Findings auto-close when the installed version is updated."
+        description="Security advisories, outdated packages, and end-of-life software from the latest scan."
       />
 
       {isError ? (

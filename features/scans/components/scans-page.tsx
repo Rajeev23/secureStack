@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/shared/page-header";
 import { ScanStatusChip } from "@/components/shared/issue-chip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCompanyScans } from "@/features/scans/hooks/use-scans";
+import { projectScansHref } from "@/features/projects/model";
 import { scanSourceLabel } from "@/lib/scan-source";
 
 export function ScansPage() {
@@ -37,7 +38,7 @@ export function ScansPage() {
           {data.map((scan) => (
             <li key={scan.id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-4 text-sm">
               <div>
-                <Link href={`/projects/${scan.projectId}`} className="font-medium hover:text-primary">
+                <Link href={projectScansHref(scan.projectId)} className="font-medium hover:text-primary">
                   {scan.projectName}
                 </Link>
                 <p className="text-muted-foreground">

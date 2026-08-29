@@ -1,7 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { IntelligenceBadges } from "@/features/inventory/components/intelligence-badges";
-import type { ComponentDetail } from "@/features/inventory/components/component-detail-dialog";
+import { PriorityChip } from "@/components/shared/issue-chip";
+import type { ComponentDetail } from "@/features/inventory/components/component-detail-view";
+import { projectInventoryItemHref } from "@/features/projects/model";
 
 type UpdateFeedItem = ComponentDetail & {
   projectName?: string;
@@ -16,13 +19,13 @@ type TransitiveGroup = {
 export function UpdateFeedList({
   items,
   groups = [],
-  onSelect,
+  hrefFor,
   emptyTitle,
   emptyDescription,
 }: {
   items: UpdateFeedItem[];
   groups?: TransitiveGroup[];
-  onSelect: (item: UpdateFeedItem) => void;
+  hrefFor?: (item: UpdateFeedItem) => string | null;
   emptyTitle: string;
   emptyDescription: string;
 }) {
@@ -39,13 +42,12 @@ export function UpdateFeedList({
     <div className="space-y-4">
       {items.length ? (
         <ul className="divide-y rounded-xl border bg-card">
-          {items.map((item) => (
-            <li key={`${item.projectId ?? ""}:${item.ecosystem}:${item.name}:${item.sourceFile}`}>
-              <button
-                type="button"
-                className="flex w-full flex-col gap-2 px-4 py-3 text-left hover:bg-muted/40 sm:flex-row sm:items-center sm:justify-between"
-                onClick={() => onSelect(item)}
-              >
+          {items.map((item) => {
+            const href =
+              hrefFor?.(item) ??
+              (item.projectId ? projectInventoryItemHref(item.projectId, item.name) : null);
+            const body = (
+              <>
                 <span className="min-w-0">
                   <span className="font-medium">{item.name}</span>
                   <span className="mt-0.5 block text-sm text-muted-foreground">
@@ -56,18 +58,40 @@ export function UpdateFeedList({
                     {item.impact && item.impact !== "none" ? ` · ${item.impact} impact` : ""}
                   </span>
                 </span>
-                <IntelligenceBadges
-                  cves={item.cves}
-                  versionStatus={item.versionStatus}
-                  latestVersion={item.latestVersion}
-                  eolStatus={item.eolStatus}
-                  recommendationKind={item.recommendationKind}
-                  priority={item.priority}
-                  priorityWhy={item.priorityWhy}
-                />
-              </button>
-            </li>
-          ))}
+                <span className="flex shrink-0 flex-wrap items-center justify-end gap-1">
+                  {item.priority ? (
+                    <span title={item.priorityWhy ?? undefined}>
+                      <PriorityChip priority={item.priority} />
+                    </span>
+                  ) : null}
+                  <IntelligenceBadges
+                    variant="table"
+                    cves={item.cves}
+                    versionStatus={item.versionStatus}
+                    latestVersion={item.latestVersion}
+                    eolStatus={item.eolStatus}
+                    recommendationKind={item.recommendationKind}
+                  />
+                </span>
+              </>
+            );
+            return (
+              <li key={`${item.projectId ?? ""}:${item.ecosystem}:${item.name}:${item.sourceFile}`}>
+                {href ? (
+                  <Link
+                    href={href}
+                    className="flex w-full flex-col gap-2 px-4 py-3 text-left hover:bg-muted/40 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    {body}
+                  </Link>
+                ) : (
+                  <div className="flex w-full flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    {body}
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       ) : null}
 

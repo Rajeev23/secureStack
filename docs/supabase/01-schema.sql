@@ -69,6 +69,10 @@ for each row execute function public.set_updated_at();
 -- repositories is jsonb with at most one item:
 --   [{ provider, repositoryId, fullName, url, branch }]
 -- The app enforces one GitHub repository per project.
+-- monitoring jsonb includes:
+--   enabled, environment,
+--   scanMode ("full" | "selected"), files (repo-relative paths),
+--   scanScopeConfigured (false until the company chooses full vs selected files).
 -- -----------------------------------------------------------------------------
 create table if not exists public.projects (
   id uuid primary key default gen_random_uuid(),

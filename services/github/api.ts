@@ -73,3 +73,19 @@ export async function listGitHubRepositories(token: string): Promise<GithubRepo[
 
   return repos;
 }
+
+const GITHUB_FULL_NAME = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
+const GITHUB_BRANCH = /^[A-Za-z0-9._/\-]+$/;
+
+export function parseGitHubRepoFullName(value: string): string | null {
+  const trimmed = value.trim();
+  if (!GITHUB_FULL_NAME.test(trimmed) || trimmed.includes("..")) return null;
+  return trimmed;
+}
+
+export function parseGitHubBranch(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.length > 255) return null;
+  if (!GITHUB_BRANCH.test(trimmed) || trimmed.includes("..")) return null;
+  return trimmed;
+}

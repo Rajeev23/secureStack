@@ -30,6 +30,19 @@ export function useProjectComponents(
   });
 }
 
+export function useProjectComponent(projectId: string | undefined, name: string | undefined) {
+  return useQuery({
+    queryKey: ["projects", projectId, "components", "by-name", name],
+    queryFn: () =>
+      fetchProjectComponents(projectId as string, {
+        name: name as string,
+        includeTransitive: true,
+        limit: 50,
+      }),
+    enabled: Boolean(projectId && name),
+  });
+}
+
 export function useInventory(pageSize = DEFAULT_PAGE_SIZE, includeTransitive = false) {
   return useQuery({
     queryKey: ["inventory", pageSize, includeTransitive],

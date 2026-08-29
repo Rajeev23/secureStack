@@ -1,7 +1,7 @@
 ---
 title: Company & GitHub
 description: Accounts are companies. Projects belong to a company. GitHub tokens stay on the server.
-lastUpdated: 2026-08-27
+lastUpdated: 2026-08-29
 related:
   - href: /documentation/onboarding
     title: Onboarding
@@ -30,6 +30,6 @@ Company
 
 Auth lives in **Supabase Auth**. The application `users` row links `auth.users.id` to a company. The first user is **ADMIN**.
 
-GitHub OAuth is a separate GitHub OAuth App (not “Login with GitHub”). The access token is encrypted and stored on `companies.github_connection`. API responses never return the token. Each project connects **one** GitHub repository. **Start Scan** reads that repo and stores components on `scans.result_snapshot`. Findings (CVE, outdated, EOL) are written to `findings`. Scan interval lives on `companies.monitoring`; per-project on/off on `projects.monitoring`. See [Scanning & inventory](/documentation/scanning), [Findings & intelligence](/documentation/intelligence), and [Scheduled monitoring](/documentation/monitoring).
+GitHub OAuth is a separate GitHub OAuth App (not “Login with GitHub”). The access token is encrypted and stored on `companies.github_connection`. API responses never return the token. Each project connects **one** GitHub repository, then chooses a **full-repo scan** or a **saved file list** (`projects.monitoring.scanMode` / `files`). **Start Scan** reads that scope and stores components on `scans.result_snapshot`. Scan interval lives on `companies.monitoring`; per-project on/off and scan scope on `projects.monitoring`. See [Scanning & inventory](/documentation/scanning), [Findings & intelligence](/documentation/intelligence), and [Scheduled monitoring](/documentation/monitoring).
 
 Schema SQL to run in the Supabase SQL Editor lives in [`docs/supabase/`](/docs/supabase) in the repo (see the developer handoff).

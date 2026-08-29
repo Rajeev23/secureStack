@@ -290,3 +290,26 @@ describe("inferTier", () => {
     expect(inferTier({ ecosystem: "github" })).toBe("infra");
   });
 });
+
+describe("parseManifest custom filenames", () => {
+  it("reads a renamed package.json", () => {
+    const components = parseManifest(
+      "apps/api/deps.json",
+      JSON.stringify({ dependencies: { react: "18.3.1" } }),
+    );
+    expect(components).toEqual([expect.objectContaining({ name: "react", version: "18.3.1", ecosystem: "npm" })]);
+  });
+
+  it("reads a company-specific version catalog name", () => {
+    const components = parseManifest(
+      "deploy/acme-bom.yaml",
+      `runc:
+  version: "1.4.2"
+  docs: https://github.com/opencontainers/runc/releases
+`,
+    );
+    expect(components).toEqual([
+      expect.objectContaining({ name: "runc", version: "1.4.2", sourceFile: "deploy/acme-bom.yaml" }),
+    ]);
+  });
+});

@@ -15,13 +15,13 @@ describe("projectNavChildren", () => {
     expect(projectNavChildren([{ id: "1", name: "Only" }])).toBeUndefined();
   });
 
-  it("sends projects with no repository to Connect GitHub", () => {
+  it("sends unfinished scan-scope setup back to Connect GitHub", () => {
     const children = projectNavChildren([
-      { id: "a", name: "Alpha", repositories: [] },
-      { id: "b", name: "Beta", repositories: [{ repositoryId: "1" }] },
+      { id: "a", name: "Alpha", repositories: [{ repositoryId: "1" }], scanScopeConfigured: false },
+      { id: "b", name: "Beta", repositories: [{ repositoryId: "2" }], scanScopeConfigured: true },
     ]);
     expect(children?.[0]?.href).toBe("/projects/a/connect");
-    expect(children?.[1]?.href).toBe("/projects/b");
+    expect(children?.[1]?.href).toBe("/projects/b/overview");
   });
 
   it("lists each project when there are two or more", () => {
@@ -30,8 +30,8 @@ describe("projectNavChildren", () => {
       { id: "b", name: "Beta" },
     ]);
     expect(children).toEqual([
-      { title: "Alpha", href: "/projects/a", match: "prefix" },
-      { title: "Beta", href: "/projects/b", match: "prefix" },
+      { title: "Alpha", href: "/projects/a/overview", match: "prefix" },
+      { title: "Beta", href: "/projects/b/overview", match: "prefix" },
     ]);
   });
 
@@ -43,7 +43,7 @@ describe("projectNavChildren", () => {
     const children = projectNavChildren(many) ?? [];
     expect(children).toHaveLength(SIDEBAR_PROJECT_LIMIT + 1);
     expect(children.at(-1)).toEqual({ title: "View all projects", href: "/projects" });
-    expect(children[0]?.href).toBe("/projects/1");
+    expect(children[0]?.href).toBe("/projects/1/overview");
   });
 });
 

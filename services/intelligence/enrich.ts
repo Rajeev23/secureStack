@@ -14,7 +14,6 @@ import {
   cveIdFromRecord,
   fixedVersionFromRecord,
   queryOsvForComponents,
-  severityFromOsv,
   type OsvQuery,
 } from "@/services/intelligence/osv";
 import {
@@ -22,12 +21,11 @@ import {
   recommendationKindFor,
   securityRecommendation,
   updateIntelligenceRecommendation,
-  updateSeverity,
 } from "@/services/intelligence/recommend";
 import { lookupLatestVersions } from "@/services/intelligence/registries";
 import { lookupReleaseIntel } from "@/services/intelligence/releases";
-import type { EnrichedComponent, IntelligenceFindingDraft, VersionStatus } from "@/services/intelligence/types";
-import { isDefaultInventoryRow } from "@/services/intelligence/visibility";
+import { draftFindingsFromComponents } from "@/services/intelligence/findings-from-snapshot";
+import type { EnrichedComponent, IntelligenceFindingDraft } from "@/services/intelligence/types";
 import { isOutdated, pickNewerVersion, versionStatus } from "@/services/intelligence/version";
 import { inferTier } from "@/services/scanner/tiers";
 
@@ -94,7 +92,6 @@ export async function enrichComponents(
   });
   const releaseByKey = await lookupReleaseIntel(releaseLookups, { githubToken: options.githubToken });
 
-  const findings: IntelligenceFindingDraft[] = [];
   const enriched: EnrichedComponent[] = [];
 
   for (const component of components) {
@@ -189,32 +186,7 @@ export async function enrichComponents(
         fixed,
         latest: latest ?? eol.latest,
       });
-      findings.push({
-        componentName: component.name,
-        ecosystem: component.ecosystem,
-        currentVersion: component.version,
-        recommendedVersion: fixed ?? latest ?? null,
-        findingType: "SECURITY",
-        severity: severityFromOsv(record),
-        externalReference: cve,
-        recommendation: text,
-      });
       row.recommendation = row.recommendation ?? text;
-    }
-
-    if (osvRecords.length === 0 && inBudget && latest && isOutdated(component.version, latest) && row.recommendation) {
-      if (isDefaultInventoryRow(row)) {
-        findings.push({
-          componentName: component.name,
-          ecosystem: component.ecosystem,
-          currentVersion: component.version,
-          recommendedVersion: latest,
-          findingType: "UPDATE",
-          severity: updateSeverity(status as VersionStatus),
-          externalReference: kind,
-          recommendation: row.recommendation,
-        });
-      }
     }
 
     if ((eol.status === "eol" || eol.status === "approaching") && tier !== "transitive") {
@@ -225,23 +197,13 @@ export async function enrichComponents(
         eolDate: eol.eolDate,
         latest: eol.latest ?? latest,
       });
-      findings.push({
-        componentName: component.name,
-        ecosystem: component.ecosystem,
-        currentVersion: component.version,
-        recommendedVersion: eol.latest ?? latest,
-        findingType: "EOL",
-        severity: eol.status === "eol" ? "HIGH" : "MEDIUM",
-        externalReference: eol.eolDate,
-        recommendation: text,
-      });
       row.recommendation = row.recommendation ?? text;
     }
 
     enriched.push(row);
   }
 
-  return { components: enriched, findings, coverage };
+  return { components: enriched, findings: draftFindingsFromComponents(enriched), coverage };
 }
 
 async function lookupEolForComponents(components: SnapshotComponent[]) {

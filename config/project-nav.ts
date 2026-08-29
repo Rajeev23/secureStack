@@ -7,13 +7,17 @@ export type ProjectNavSource = {
   id: string;
   name: string;
   repositories?: { repositoryId?: string }[];
+  scanScopeConfigured?: boolean;
 };
 
 export function projectNavHref(project: ProjectNavSource): string {
   if (project.repositories && project.repositories.length === 0) {
     return `/projects/${project.id}/connect`;
   }
-  return `/projects/${project.id}`;
+  if (project.scanScopeConfigured === false) {
+    return `/projects/${project.id}/connect`;
+  }
+  return `/projects/${project.id}/overview`;
 }
 
 export function projectNavChildren(projects: ProjectNavSource[]): NavItem[] | undefined {

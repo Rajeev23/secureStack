@@ -1,6 +1,13 @@
 import { z } from "zod";
 import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api/client";
-import { githubRepoSchema, projectSchema, type GithubRepo, type Project } from "@/features/projects/model";
+import {
+  githubFileSearchSchema,
+  githubRepoSchema,
+  projectSchema,
+  type GithubFileSearch,
+  type GithubRepo,
+  type Project,
+} from "@/features/projects/model";
 
 const projectsResponseSchema = z.object({
   projects: z.array(projectSchema),
@@ -35,15 +42,24 @@ export async function createProject(input: {
 
 export async function connectProjectRepositories(
   projectId: string,
-  repositories: Project["repositories"],
+  input: {
+    repositories: Project["repositories"];
+    scanMode?: Project["scanMode"];
+    files?: string[];
+  },
 ): Promise<Project> {
-  const data = await apiPatch<unknown>(`/api/projects/${projectId}`, { repositories });
+  const data = await apiPatch<unknown>(`/api/projects/${projectId}`, input);
   return projectResponseSchema.parse(data).project;
 }
 
 export async function updateProjectMonitoring(
   projectId: string,
-  patch: { monitoringEnabled?: boolean; environment?: Project["environment"] },
+  patch: {
+    monitoringEnabled?: boolean;
+    environment?: Project["environment"];
+    scanMode?: Project["scanMode"];
+    files?: string[];
+  },
 ): Promise<Project> {
   const data = await apiPatch<unknown>(`/api/projects/${projectId}`, patch);
   return projectResponseSchema.parse(data).project;
@@ -56,4 +72,18 @@ export async function deleteProject(projectId: string): Promise<void> {
 export async function fetchGithubRepositories(): Promise<GithubRepo[]> {
   const data = await apiGet<unknown>("/api/github/repositories");
   return reposResponseSchema.parse(data).repositories;
+}
+
+export async function fetchGithubRepositoryFiles(input: {
+  fullName: string;
+  branch: string;
+  query: string;
+}): Promise<GithubFileSearch> {
+  const params = new URLSearchParams({
+    fullName: input.fullName,
+    branch: input.branch,
+  });
+  if (input.query) params.set("q", input.query);
+  const data = await apiGet<unknown>(`/api/github/repository-files?${params.toString()}`);
+  return githubFileSearchSchema.parse(data);
 }

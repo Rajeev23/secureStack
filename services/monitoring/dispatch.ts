@@ -12,7 +12,7 @@ function appUrl(): string {
 }
 
 export function projectDeepLink(projectId: string): string {
-  return `${appUrl()}/projects/${projectId}`;
+  return `${appUrl()}/projects/${projectId}/overview`;
 }
 
 export function dashboardDeepLink(): string {

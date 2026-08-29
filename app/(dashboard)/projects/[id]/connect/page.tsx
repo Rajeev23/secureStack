@@ -3,7 +3,7 @@ import { ConnectProjectPage } from "@/features/projects";
 
 export const metadata: Metadata = {
   title: "Connect GitHub",
-  description: "Authorize GitHub and select one repository for this project.",
+  description: "Authorize GitHub, select a repository, then choose a full-repo scan or specific files to monitor.",
 };
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {

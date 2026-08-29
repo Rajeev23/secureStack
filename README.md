@@ -27,7 +27,7 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000) for the public home page.
 
-New accounts: home **Sign up** (or `/signup`) with name, email, and password → **company name** on `/onboarding` → `/dashboard`. Then **Add Project** and **Connect GitHub**. Use **Forgot password** on `/login` if you cannot sign in.
+New accounts: home **Sign up** (or `/signup`) with name, email, and password → **company name** on `/onboarding` → `/dashboard`. Then **Add Project**, **Connect GitHub**, and choose a full-repo scan or specific files to monitor. Use **Forgot password** on `/login` if you cannot sign in.
 
 To empty the five tables while iterating, run `docs/supabase/03-reset.sql` in the Supabase SQL Editor.
 
@@ -53,7 +53,7 @@ GitHub access tokens are encrypted on the company row and never returned to the 
 | GitHub | Real OAuth + repository selection |
 | Scanning | Real discovery from version catalogs (`bom.yaml`, `versions.yaml`), package manifests, lockfiles (installed versions of declared deps), Dockerfiles, Gemfile.lock, composer.lock, and CycloneDX/SPDX SBOMs |
 | CVE / EOL | OSV + registries + GitHub Releases + endoflife.date; findings on the project |
-| Monitoring | Scheduled scans (within 24h by default), Slack/email alerts, What’s changed (upstream), finding auto-close |
+| Monitoring | Scheduled scans (within 24h by default), Slack/email alerts, What’s changed (upstream). Findings refresh from the latest scan. |
 
 ## Developer handoff
 

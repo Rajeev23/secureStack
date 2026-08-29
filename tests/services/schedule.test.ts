@@ -33,8 +33,38 @@ describe("parseCompanyMonitoring", () => {
 
 describe("parseProjectMonitoring", () => {
   it("defaults to enabled", () => {
-    expect(parseProjectMonitoring(null)).toEqual({ enabled: true, environment: "unknown" });
-    expect(parseProjectMonitoring({ enabled: false })).toEqual({ enabled: false, environment: "unknown" });
+    expect(parseProjectMonitoring(null)).toEqual({
+      enabled: true,
+      environment: "unknown",
+      scanMode: "full",
+      files: [],
+      scanScopeConfigured: true,
+    });
+    expect(parseProjectMonitoring({ enabled: false })).toEqual({
+      enabled: false,
+      environment: "unknown",
+      scanMode: "full",
+      files: [],
+      scanScopeConfigured: true,
+    });
+  });
+
+  it("keeps selected files and treats new-project JSON as unconfigured", () => {
+    expect(
+      parseProjectMonitoring({
+        enabled: true,
+        environment: "production",
+        scanMode: "selected",
+        files: ["package.json", "../secret", "deploy/bom.yaml"],
+        scanScopeConfigured: false,
+      }),
+    ).toEqual({
+      enabled: true,
+      environment: "production",
+      scanMode: "selected",
+      files: ["package.json", "deploy/bom.yaml"],
+      scanScopeConfigured: false,
+    });
   });
 });
 

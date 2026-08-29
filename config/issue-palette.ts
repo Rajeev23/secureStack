@@ -1,117 +1,150 @@
 /**
- * Single place to change colors and labels for issue type, severity, status,
- * version drift, EOL, and scan state. UI chips read from here — do not scatter
- * hex values in feature components.
+ * Semantic color tokens — single source of truth.
+ *
+ * Industry-standard mapping (aligned with CVSS / common security tooling):
+ *   critical → deep red      (immediate action)
+ *   danger   → red           (errors, open findings, EOL, production)
+ *   warning  → orange        (high severity, breaking, acknowledged)
+ *   caution  → amber         (medium severity, approaching deadlines, in-flight)
+ *   info     → blue          (low severity, updates, informational)
+ *   success  → green         (resolved, healthy, up to date)
+ *   special  → violet        (accepted risk, EOL categorization)
+ *   neutral  → gray          (unknown, ignored, no impact)
+ *
+ * Change a color here and every palette updates consistently.
+ * Values are WCAG AA–friendly on white backgrounds (≥ 4.5:1 as text).
  */
+export const TOKENS = {
+  critical: "#991b1b", // red-800
+  danger: "#dc2626", //   red-600
+  warning: "#c2410c", //  orange-700
+  caution: "#b45309", //  amber-700
+  info: "#1d4ed8", //     blue-700
+  success: "#15803d", //  green-700
+  special: "#6d28d9", //  violet-700
+  neutral: "#6b7280", //  gray-500
+} as const;
+
 export type PaletteEntry = {
   color: string;
   label: string;
 };
 
-const UNKNOWN: PaletteEntry = {
-  color: "var(--mute)",
+export const UNKNOWN: PaletteEntry = {
+  color: TOKENS.neutral,
   label: "Unknown",
 };
 
-export const SEVERITY_PALETTE: Record<string, PaletteEntry> = {
-  CRITICAL: { color: "var(--error)", label: "Critical" },
-  HIGH: { color: "#ea580c", label: "High" },
-  MEDIUM: { color: "var(--warning)", label: "Medium" },
-  LOW: { color: "var(--link)", label: "Low" },
-  INFO: { color: "var(--mute)", label: "Info" },
-};
-
-export const FINDING_TYPE_PALETTE: Record<string, PaletteEntry> = {
-  SECURITY: { color: "var(--error)", label: "Security" },
-  UPDATE: { color: "var(--link)", label: "Update" },
-  EOL: { color: "var(--gradient-preview-start)", label: "EOL" },
-};
-
-export const FINDING_STATUS_PALETTE: Record<string, PaletteEntry> = {
-  OPEN: { color: "var(--error)", label: "Open" },
-  ACKNOWLEDGED: { color: "#ea580c", label: "Acknowledged" },
-  IN_PROGRESS: { color: "var(--link)", label: "In progress" },
-  RESOLVED: { color: "#16a34a", label: "Resolved" },
-  IGNORED: { color: "var(--mute)", label: "Ignored" },
-  ACCEPTED_RISK: { color: "var(--gradient-preview-start)", label: "Accepted risk" },
-};
-
-export const VERSION_STATUS_PALETTE: Record<string, PaletteEntry> = {
-  up_to_date: { color: "#16a34a", label: "Up to date" },
-  patch: { color: "var(--link)", label: "Patch update" },
-  minor: { color: "var(--warning)", label: "Minor update" },
-  major: { color: "#ea580c", label: "Major update" },
-  unknown: { color: "var(--mute)", label: "Unknown" },
-};
-
-export const RECOMMENDATION_KIND_PALETTE: Record<string, PaletteEntry> = {
-  update_urgent: { color: "var(--error)", label: "Update urgently" },
-  update: { color: "#16a34a", label: "Update recommended" },
-  review: { color: "#ea580c", label: "Review required" },
-  wait: { color: "var(--mute)", label: "Not urgent" },
-};
-
-export const DEPENDENCY_TIER_PALETTE: Record<string, PaletteEntry> = {
-  infra: { color: "var(--link)", label: "Infra" },
-  direct: { color: "#16a34a", label: "Direct" },
-  transitive: { color: "var(--mute)", label: "Transitive" },
-};
-
-export const PRIORITY_PALETTE: Record<string, PaletteEntry> = {
-  P1: { color: "var(--error)", label: "P1" },
-  P2: { color: "#ea580c", label: "P2" },
-  P3: { color: "var(--warning)", label: "P3" },
-  P4: { color: "var(--mute)", label: "P4" },
-};
-
-export const IMPACT_PALETTE: Record<string, PaletteEntry> = {
-  critical: { color: "var(--error)", label: "Critical impact" },
-  high: { color: "#ea580c", label: "High impact" },
-  medium: { color: "var(--warning)", label: "Medium impact" },
-  low: { color: "var(--link)", label: "Low impact" },
-  none: { color: "var(--mute)", label: "No impact" },
-};
-
-export const ENVIRONMENT_PALETTE: Record<string, PaletteEntry> = {
-  production: { color: "var(--error)", label: "Production" },
-  staging: { color: "var(--warning)", label: "Staging" },
-  development: { color: "var(--link)", label: "Development" },
-  unknown: { color: "var(--mute)", label: "Environment unset" },
-};
-
-export const EOL_STATUS_PALETTE: Record<string, PaletteEntry> = {
-  eol: { color: "var(--error)", label: "EOL" },
-  approaching: { color: "var(--warning)", label: "Approaching EOL" },
-  supported: { color: "#16a34a", label: "Supported" },
-  unknown: { color: "var(--mute)", label: "Unknown" },
-};
-
-export const SCAN_STATUS_PALETTE: Record<string, PaletteEntry> = {
-  completed: { color: "#16a34a", label: "Completed" },
-  failed: { color: "var(--error)", label: "Failed" },
-  running: { color: "var(--warning)", label: "Scanning" },
-  pending: { color: "var(--warning)", label: "Scanning" },
-};
-
-export const CHANGE_KIND_PALETTE: Record<string, PaletteEntry> = {
-  security: { color: "var(--error)", label: "Security" },
-  update: { color: "var(--link)", label: "Update" },
-  eol: { color: "var(--gradient-preview-start)", label: "EOL" },
-  breaking: { color: "#ea580c", label: "Breaking" },
-  resolved: { color: "#16a34a", label: "Resolved" },
-};
-
-export const CVE_PALETTE: PaletteEntry = {
-  color: "var(--error)",
-  label: "CVE",
-};
-
-export function lookupPalette(
-  map: Record<string, PaletteEntry>,
+/** Safe lookup: always returns an entry, falling back to UNKNOWN. */
+export function getPaletteEntry(
+  palette: Record<string, PaletteEntry>,
   key: string | null | undefined,
 ): PaletteEntry {
   if (!key) return UNKNOWN;
-  const hit = map[key] ?? map[key.toUpperCase()] ?? map[key.toLowerCase()];
-  if (hit) return hit;
-  return { color: UNKNOWN.color, label: key.replaceAll("_", " ") };
+  return palette[key] ?? UNKNOWN;
 }
+
+/**
+ * Chip lookup. Same palettes as `getPaletteEntry`, but keys match
+ * case-insensitively (P1, critical vs CRITICAL).
+ */
+export function lookupPalette(
+  palette: Record<string, PaletteEntry>,
+  key: string | null | undefined,
+): PaletteEntry {
+  if (!key) return UNKNOWN;
+  return palette[key] ?? palette[key.toUpperCase()] ?? palette[key.toLowerCase()] ?? UNKNOWN;
+}
+
+export const SEVERITY_PALETTE: Record<string, PaletteEntry> = {
+  CRITICAL: { color: TOKENS.critical, label: "Critical" },
+  HIGH: { color: TOKENS.danger, label: "High" },
+  MEDIUM: { color: TOKENS.caution, label: "Medium" },
+  LOW: { color: TOKENS.info, label: "Low" },
+  INFO: { color: TOKENS.neutral, label: "Info" },
+};
+
+export const FINDING_TYPE_PALETTE: Record<string, PaletteEntry> = {
+  SECURITY: { color: TOKENS.danger, label: "Security" },
+  UPDATE: { color: TOKENS.info, label: "Update" },
+  EOL: { color: TOKENS.special, label: "EOL" },
+};
+
+export const FINDING_STATUS_PALETTE: Record<string, PaletteEntry> = {
+  OPEN: { color: TOKENS.danger, label: "Open" },
+  ACKNOWLEDGED: { color: TOKENS.warning, label: "Acknowledged" },
+  IN_PROGRESS: { color: TOKENS.caution, label: "In progress" },
+  RESOLVED: { color: TOKENS.success, label: "Resolved" },
+  IGNORED: { color: TOKENS.neutral, label: "Ignored" },
+  ACCEPTED_RISK: { color: TOKENS.special, label: "Accepted risk" },
+};
+
+export const VERSION_STATUS_PALETTE: Record<string, PaletteEntry> = {
+  up_to_date: { color: TOKENS.success, label: "Up to date" },
+  patch: { color: TOKENS.info, label: "Patch update" },
+  minor: { color: TOKENS.caution, label: "Minor update" },
+  major: { color: TOKENS.warning, label: "Major update" },
+  unknown: { color: TOKENS.neutral, label: "Unknown" },
+};
+
+export const RECOMMENDATION_KIND_PALETTE: Record<string, PaletteEntry> = {
+  update_urgent: { color: TOKENS.danger, label: "Update urgently" },
+  update: { color: TOKENS.info, label: "Update recommended" },
+  review: { color: TOKENS.warning, label: "Review required" },
+  wait: { color: TOKENS.neutral, label: "Not urgent" },
+};
+
+export const DEPENDENCY_TIER_PALETTE: Record<string, PaletteEntry> = {
+  infra: { color: TOKENS.special, label: "Infra" },
+  direct: { color: TOKENS.info, label: "Direct" },
+  transitive: { color: TOKENS.neutral, label: "Transitive" },
+};
+
+export const PRIORITY_PALETTE: Record<string, PaletteEntry> = {
+  P1: { color: TOKENS.critical, label: "P1" },
+  P2: { color: TOKENS.danger, label: "P2" },
+  P3: { color: TOKENS.caution, label: "P3" },
+  P4: { color: TOKENS.neutral, label: "P4" },
+};
+
+export const IMPACT_PALETTE: Record<string, PaletteEntry> = {
+  critical: { color: TOKENS.critical, label: "Critical impact" },
+  high: { color: TOKENS.danger, label: "High impact" },
+  medium: { color: TOKENS.caution, label: "Medium impact" },
+  low: { color: TOKENS.info, label: "Low impact" },
+  none: { color: TOKENS.neutral, label: "No impact" },
+};
+
+export const ENVIRONMENT_PALETTE: Record<string, PaletteEntry> = {
+  production: { color: TOKENS.danger, label: "Production" },
+  staging: { color: TOKENS.caution, label: "Staging" },
+  development: { color: TOKENS.info, label: "Development" },
+  unknown: { color: TOKENS.neutral, label: "Environment unset" },
+};
+
+export const EOL_STATUS_PALETTE: Record<string, PaletteEntry> = {
+  eol: { color: TOKENS.danger, label: "EOL" },
+  approaching: { color: TOKENS.caution, label: "Approaching EOL" },
+  supported: { color: TOKENS.success, label: "Supported" },
+  unknown: { color: TOKENS.neutral, label: "Unknown" },
+};
+
+export const SCAN_STATUS_PALETTE: Record<string, PaletteEntry> = {
+  completed: { color: TOKENS.success, label: "Completed" },
+  failed: { color: TOKENS.danger, label: "Failed" },
+  running: { color: TOKENS.caution, label: "Scanning" },
+  pending: { color: TOKENS.caution, label: "Scanning" },
+};
+
+export const CHANGE_KIND_PALETTE: Record<string, PaletteEntry> = {
+  security: { color: TOKENS.danger, label: "Security" },
+  update: { color: TOKENS.info, label: "Update" },
+  eol: { color: TOKENS.special, label: "EOL" },
+  breaking: { color: TOKENS.warning, label: "Breaking" },
+  resolved: { color: TOKENS.success, label: "Resolved" },
+};
+
+export const CVE_PALETTE: PaletteEntry = {
+  color: TOKENS.danger,
+  label: "CVE",
+};

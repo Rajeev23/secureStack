@@ -147,7 +147,7 @@ Send back (or put in `.env.local` — do not paste secrets in chat if you can av
 After that, Phase 1 E2E is:
 
 ```text
-Sign up → name company → dashboard → add project → Connect GitHub → select repo → project saved → Start Scan
+Sign up → name company → dashboard → add project → Connect GitHub → select repo → choose full scan or selected files → project saved → Start Scan
 ```
 
 Phase 4 monitoring is live: after a scan, SecureStack writes **findings** and can re-scan on a schedule. Existing databases need [`04-phase4.sql`](./04-phase4.sql). Locally use **Settings → Scan due projects now**; production uses Vercel Cron and `CRON_SECRET`.

@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateProject, useProjects } from "@/features/projects/hooks/use-projects";
-import { projectNeedsGithubConnect } from "@/features/projects/model";
+import { projectNeedsConnectSetup } from "@/features/projects/model";
 import { ApiError } from "@/lib/api/errors";
 import { NAME_MAX_LENGTH, nameSchema } from "@/lib/company/names";
 
@@ -29,7 +29,7 @@ export function NewProjectPage() {
   const router = useRouter();
   const createProject = useCreateProject();
   const { data: projects } = useProjects();
-  const waiting = (projects ?? []).filter(projectNeedsGithubConnect);
+  const waiting = (projects ?? []).filter(projectNeedsConnectSetup);
   const {
     register,
     handleSubmit,

@@ -1,3 +1,5 @@
+import { normalizeWatchPaths } from "@/services/scanner/watch-paths";
+
 export type CompanyMonitoring = {
   scanIntervalHours: number;
   alertsEnabled: boolean;
@@ -11,9 +13,14 @@ export type DigestMode = "off" | "daily" | "weekly";
 
 export type ProjectEnvironment = "production" | "staging" | "development" | "unknown";
 
+export type ScanMode = "full" | "selected";
+
 export type ProjectMonitoring = {
   enabled: boolean;
   environment: ProjectEnvironment;
+  scanMode: ScanMode;
+  files: string[];
+  scanScopeConfigured: boolean;
 };
 
 export const DEFAULT_COMPANY_MONITORING: CompanyMonitoring = {
@@ -28,6 +35,9 @@ export const DEFAULT_COMPANY_MONITORING: CompanyMonitoring = {
 export const DEFAULT_PROJECT_MONITORING: ProjectMonitoring = {
   enabled: true,
   environment: "unknown",
+  scanMode: "full",
+  files: [],
+  scanScopeConfigured: true,
 };
 
 const ALLOWED_INTERVALS = new Set([0, 6, 12, 24, 48, 168]);
@@ -76,11 +86,18 @@ export function parseProjectMonitoring(value: unknown): ProjectMonitoring {
   if (!value || typeof value !== "object") return { ...DEFAULT_PROJECT_MONITORING };
   const record = value as Record<string, unknown>;
   const environment = typeof record.environment === "string" ? record.environment : "unknown";
+  const scanMode: ScanMode = record.scanMode === "selected" ? "selected" : "full";
+  const files = normalizeWatchPaths(record.files);
+  const hasScopeField =
+    "scanMode" in record || "files" in record || "scanScopeConfigured" in record;
   return {
     enabled: record.enabled !== false,
     environment: ENVIRONMENTS.has(environment as ProjectEnvironment)
       ? (environment as ProjectEnvironment)
       : "unknown",
+    scanMode,
+    files,
+    scanScopeConfigured: hasScopeField ? record.scanScopeConfigured !== false : true,
   };
 }
 

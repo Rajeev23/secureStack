@@ -15,8 +15,8 @@ export type NavItem = {
   /** Opens in a new tab (e.g. public documentation). */
   external?: boolean;
   /**
-   * Child active state. `prefix` highlights `/projects/:id` on nested routes
-   * like `/projects/:id/connect`. Defaults to exact match.
+   * Child active state. `prefix` highlights `/projects/:id/overview` on nested
+   * routes like `/projects/:id/inventory`. Defaults to exact match.
    */
   match?: "exact" | "prefix";
 };

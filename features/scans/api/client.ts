@@ -117,12 +117,13 @@ export async function fetchProjectScans(projectId: string): Promise<Scan[]> {
 
 export async function fetchProjectComponents(
   projectId: string,
-  params: { offset?: number; limit?: number; includeTransitive?: boolean } = {},
+  params: { offset?: number; limit?: number; includeTransitive?: boolean; name?: string } = {},
 ): Promise<ProjectComponentsPage> {
   const search = new URLSearchParams();
   if (params.offset != null) search.set("offset", String(params.offset));
   if (params.limit != null) search.set("limit", String(params.limit));
   if (params.includeTransitive) search.set("transitive", "1");
+  if (params.name) search.set("name", params.name);
   const suffix = search.size ? `?${search.toString()}` : "";
   const data = await apiGet<unknown>(`/api/projects/${projectId}/components${suffix}`);
   return projectComponentsSchema.parse(data);

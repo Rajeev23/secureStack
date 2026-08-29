@@ -30,6 +30,15 @@ export async function listRepositoryTree(
   fullName: string,
   branch: string,
 ): Promise<GithubTreeEntry[]> {
+  const listed = await listRepositoryBlobPaths(token, fullName, branch);
+  return listed.paths.map((path) => ({ path, type: "blob" as const }));
+}
+
+export async function listRepositoryBlobPaths(
+  token: string,
+  fullName: string,
+  branch: string,
+): Promise<{ paths: string[]; truncated: boolean }> {
   const ref = await githubFetch<{ object: { sha: string } }>(
     token,
     `/repos/${fullName}/git/ref/heads/${encodeURIComponent(branch)}`,
@@ -38,7 +47,10 @@ export async function listRepositoryTree(
     token,
     `/repos/${fullName}/git/trees/${ref.object.sha}?recursive=1`,
   );
-  return (tree.tree ?? []).filter((entry) => entry.type === "blob");
+  return {
+    paths: (tree.tree ?? []).filter((entry) => entry.type === "blob").map((entry) => entry.path),
+    truncated: Boolean(tree.truncated),
+  };
 }
 
 export async function readRepositoryFile(

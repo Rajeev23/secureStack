@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api/handle-error";
 import { requireSession } from "@/lib/auth/session";
-import { filterInventoryRows, inventoryMeta, parseInventoryScope } from "@/services/intelligence/inventory-query";
-import { withInferredTier } from "@/services/intelligence/visibility";
+import {
+  filterInventoryRows,
+  inventoryMeta,
+  matchComponentsByName,
+  parseInventoryScope,
+} from "@/services/intelligence/inventory-query";
+import { intelBudgetRank, withInferredTier } from "@/services/intelligence/visibility";
 import { withProjectImpact } from "@/services/intelligence/impact";
 import { paginate, parsePageQuery } from "@/lib/pagination";
 import { snapshotCoverage } from "@/services/scanner/summary";
@@ -19,7 +24,7 @@ export async function GET(request: Request, context: RouteContext) {
 
   try {
     const search = new URL(request.url).searchParams;
-    const { includeTransitive } = parseInventoryScope(search);
+    const { includeTransitive, name } = parseInventoryScope(search);
     const { offset, limit } = parsePageQuery(search);
     const project = await getProject(session.userId, id);
     const scan = await getLatestCompletedScan(session.userId, id);
@@ -31,8 +36,12 @@ export async function GET(request: Request, context: RouteContext) {
         }),
       ),
     );
-    const visible = filterInventoryRows(components, includeTransitive);
-    const page = paginate(visible, offset, limit);
+    const visible = name
+      ? matchComponentsByName(components, name).sort(
+          (left, right) => intelBudgetRank(left) - intelBudgetRank(right) || left.name.localeCompare(right.name),
+        )
+      : filterInventoryRows(components, includeTransitive);
+    const page = paginate(visible, offset, name ? Math.max(limit, visible.length || 1) : limit);
     const meta = inventoryMeta(components);
     return NextResponse.json({
       components: page.items,

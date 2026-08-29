@@ -18,7 +18,6 @@ import { scanListSnapshot } from "@/services/scanner/summary";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
 import type { CompanyRow, ProjectRow, ScanRow, ScanSnapshot } from "@/server/supabase/types";
 import { markDigestSent } from "@/services/api/company";
-import { syncFindingsForProject } from "@/services/api/findings";
 import { getCompanyGitHubToken, getCompanyGitHubTokenForCompany } from "@/services/api/github";
 import { getProject, listProjects } from "@/services/api/projects";
 import { requireCompanyContext } from "@/services/api/company";
@@ -94,6 +93,9 @@ export async function createScan(
   source = "github",
 ): Promise<ScanPublic> {
   const project = await getProject(userId, projectId);
+  if (source !== "sbom" && project.scanMode === "selected" && project.files.length === 0) {
+    throw new DomainError("Select at least one file to monitor.", 400);
+  }
   return insertScan(project.id, project.repositories.length, source);
 }
 
@@ -131,6 +133,8 @@ export async function runScan(userId: string, scanId: string): Promise<ScanPubli
     companyId: project.companyId,
     environment: project.environment,
     repositories: project.repositories,
+    scanMode: project.scanMode,
+    files: project.files,
     token,
   });
 }
@@ -168,6 +172,8 @@ export async function runSbomScan(userId: string, projectId: string, document: u
     companyId: project.companyId,
     environment: project.environment,
     repositories: project.repositories,
+    scanMode: project.scanMode,
+    files: project.files,
     token,
     snapshot,
   });
@@ -196,6 +202,8 @@ async function executeScan(input: {
   companyId: string;
   environment: ReturnType<typeof parseProjectMonitoring>["environment"];
   repositories: Array<{ fullName: string; branch: string }>;
+  scanMode?: ReturnType<typeof parseProjectMonitoring>["scanMode"];
+  files?: string[];
   token?: string;
   snapshot?: ParsedScanSnapshot;
 }): Promise<ScanPublic> {
@@ -218,7 +226,12 @@ async function executeScan(input: {
         throw new DomainError("GitHub is not connected.", 409);
       }
       for (const repo of primaryRepositories(input.repositories)) {
-        const result = await scanGitHubRepository(input.token, repo.fullName, repo.branch || "main");
+        if (input.scanMode === "selected" && (!input.files || input.files.length === 0)) {
+          throw new DomainError("Select at least one file to monitor.", 400);
+        }
+        const result = await scanGitHubRepository(input.token, repo.fullName, repo.branch || "main", {
+          paths: input.scanMode === "selected" ? input.files : undefined,
+        });
         snapshot.repositories.push({
           fullName: repo.fullName,
           branch: repo.branch || "main",
@@ -264,11 +277,10 @@ async function executeScan(input: {
       });
       const previous = await previousCompletedSnapshot(input.projectId, input.scanId);
       const changes = diffSnapshots(previous, { components: intel.components });
-      const openFindings = await syncFindingsForProject(input.projectId, intel.findings);
       const { data: enrichedRow, error: enrichError } = await admin
         .from("scans")
         .update({
-          findings_found: openFindings,
+          findings_found: intel.findings.length,
           result_snapshot: {
             repositories: snapshot.repositories,
             components: intel.components,
@@ -523,6 +535,8 @@ export async function runDueScheduledScans(options: { companyId?: string } = {})
         companyId: project.company_id,
         environment: monitoring.environment,
         repositories,
+        scanMode: monitoring.scanMode,
+        files: monitoring.files,
         token,
       });
       scanned.push({

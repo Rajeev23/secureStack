@@ -1,10 +1,11 @@
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
 import type { ProjectRepository, ProjectRow } from "@/server/supabase/types";
 import { DomainError } from "@/lib/errors";
-import { parseProjectMonitoring, type ProjectEnvironment } from "@/services/monitoring/schedule";
+import { parseProjectMonitoring, type ProjectEnvironment, type ScanMode } from "@/services/monitoring/schedule";
 import { primaryRepositories } from "@/services/api/project-repositories";
 import { normalizeName } from "@/lib/company/names";
 import { requireCompanyContext } from "@/services/api/company";
+import { normalizeWatchPaths } from "@/services/scanner/watch-paths";
 
 export type ProjectPublic = {
   id: string;
@@ -15,11 +16,15 @@ export type ProjectPublic = {
   status: ProjectRow["status"];
   monitoringEnabled: boolean;
   environment: ProjectEnvironment;
+  scanMode: ScanMode;
+  files: string[];
+  scanScopeConfigured: boolean;
   createdAt: string;
   updatedAt: string;
 };
 
 function toProjectPublic(row: ProjectRow): ProjectPublic {
+  const monitoring = parseProjectMonitoring(row.monitoring);
   return {
     id: row.id,
     companyId: row.company_id,
@@ -27,8 +32,11 @@ function toProjectPublic(row: ProjectRow): ProjectPublic {
     description: row.description,
     repositories: primaryRepositories(row.repositories),
     status: row.status,
-    monitoringEnabled: parseProjectMonitoring(row.monitoring).enabled,
-    environment: parseProjectMonitoring(row.monitoring).environment,
+    monitoringEnabled: monitoring.enabled,
+    environment: monitoring.environment,
+    scanMode: monitoring.scanMode,
+    files: monitoring.files,
+    scanScopeConfigured: monitoring.scanScopeConfigured,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -81,6 +89,9 @@ export async function createProject(
       monitoring: {
         enabled: true,
         environment: input.environment ?? "unknown",
+        scanMode: "full",
+        files: [],
+        scanScopeConfigured: false,
       },
       status: "active",
     })
@@ -98,17 +109,46 @@ export async function attachProjectRepositories(
   userId: string,
   projectId: string,
   repositories: ProjectRepository[],
+  scope?: { scanMode: ScanMode; files?: string[] },
 ): Promise<ProjectPublic> {
   if (repositories.length !== 1) {
     throw new DomainError("Connect one GitHub repository.", 400);
   }
+  if (scope?.scanMode === "selected" && normalizeWatchPaths(scope.files).length === 0) {
+    throw new DomainError("Select at least one file to monitor.", 400);
+  }
 
-  await getProject(userId, projectId);
+  const current = await getProject(userId, projectId);
   const { companyId } = await requireCompanyContext(userId);
   const admin = createSupabaseAdminClient();
+  const { data: row, error: currentError } = await admin
+    .from("projects")
+    .select("monitoring")
+    .eq("id", projectId)
+    .eq("company_id", companyId)
+    .single();
+  if (currentError || !row) {
+    throw new DomainError(currentError?.message ?? "Project not found.", 404);
+  }
+
+  const previous = parseProjectMonitoring((row as ProjectRow).monitoring);
+  const sameRepo = current.repositories[0]?.repositoryId === repositories[0]?.repositoryId;
+  const monitoring = parseProjectMonitoring({
+    ...previous,
+    ...(scope
+      ? {
+          scanMode: scope.scanMode,
+          files: scope.files ?? previous.files,
+          scanScopeConfigured: true,
+        }
+      : sameRepo
+        ? {}
+        : { scanMode: "full", files: [], scanScopeConfigured: false }),
+  });
+
   const { data, error } = await admin
     .from("projects")
-    .update({ repositories: primaryRepositories(repositories) })
+    .update({ repositories: primaryRepositories(repositories), monitoring })
     .eq("id", projectId)
     .eq("company_id", companyId)
     .select("*")
@@ -135,7 +175,13 @@ export async function deleteProject(userId: string, projectId: string): Promise<
 export async function updateProjectMonitoring(
   userId: string,
   projectId: string,
-  patch: { enabled?: boolean; environment?: ProjectEnvironment },
+  patch: {
+    enabled?: boolean;
+    environment?: ProjectEnvironment;
+    scanMode?: ScanMode;
+    files?: string[];
+    scanScopeConfigured?: boolean;
+  },
 ): Promise<ProjectPublic> {
   const project = await getProject(userId, projectId);
   const { companyId } = await requireCompanyContext(userId);
@@ -149,10 +195,21 @@ export async function updateProjectMonitoring(
   if (currentError || !current) {
     throw new DomainError(currentError?.message ?? "Project not found.", 404);
   }
+  const previous = parseProjectMonitoring((current as ProjectRow).monitoring);
+  const nextFiles = patch.files !== undefined ? normalizeWatchPaths(patch.files) : previous.files;
+  const nextMode = patch.scanMode ?? previous.scanMode;
+  if (nextMode === "selected" && nextFiles.length === 0) {
+    throw new DomainError("Select at least one file to monitor.", 400);
+  }
   const monitoring = parseProjectMonitoring({
-    ...parseProjectMonitoring((current as ProjectRow).monitoring),
+    ...previous,
     ...(patch.enabled !== undefined ? { enabled: patch.enabled } : {}),
     ...(patch.environment !== undefined ? { environment: patch.environment } : {}),
+    scanMode: nextMode,
+    files: nextFiles,
+    scanScopeConfigured:
+      patch.scanScopeConfigured ??
+      (patch.scanMode !== undefined || patch.files !== undefined ? true : previous.scanScopeConfigured),
   });
   const { data, error } = await admin
     .from("projects")

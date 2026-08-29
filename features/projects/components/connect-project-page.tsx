@@ -9,7 +9,9 @@ import { ErrorState } from "@/components/feedback/ErrorState";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScanScopeFields } from "@/features/projects/components/scan-scope-fields";
 import { useConnectRepositories, useGithubRepositories, useProject } from "@/features/projects/hooks/use-projects";
+import type { Project } from "@/features/projects/model";
 import { ApiError } from "@/lib/api/errors";
 import { cn } from "@/lib/utils";
 import { useCompanyContextStore } from "@/stores/company-context-store";
@@ -17,6 +19,8 @@ import { useCompanyContextStore } from "@/stores/company-context-store";
 type ConnectProjectPageProps = {
   projectId: string;
 };
+
+type Step = "repo" | "scope";
 
 export function ConnectProjectPage({ projectId }: ConnectProjectPageProps) {
   const router = useRouter();
@@ -29,6 +33,9 @@ export function ConnectProjectPage({ projectId }: ConnectProjectPageProps) {
   const reposQuery = useGithubRepositories(githubConnected);
   const connect = useConnectRepositories(projectId);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [stepOverride, setStepOverride] = useState<Step | null>(null);
+  const [scanModeOverride, setScanModeOverride] = useState<Project["scanMode"] | null>(null);
+  const [filesOverride, setFilesOverride] = useState<string[] | null>(null);
 
   const githubParam = searchParams.get("github");
   const githubReason = searchParams.get("reason");
@@ -60,20 +67,39 @@ export function ConnectProjectPage({ projectId }: ConnectProjectPageProps) {
     return (reposQuery.data ?? []).find((repo) => String(repo.id) === effectiveSelectedId) ?? null;
   }, [reposQuery.data, effectiveSelectedId]);
 
-  const onConnectRepo = async () => {
+  const scanMode = scanModeOverride ?? project?.scanMode ?? "full";
+  const files = filesOverride ?? project?.files ?? [];
+  const step: Step =
+    stepOverride ??
+    (project?.repositories.length && project.scanScopeConfigured === false ? "scope" : "repo");
+
+  const onContinueToScope = () => {
     if (!selectedRepo) return;
+    setStepOverride("scope");
+  };
+
+  const onSave = async () => {
+    if (!selectedRepo) return;
+    if (scanMode === "selected" && files.length === 0) {
+      toast.error("Select at least one file to monitor, or scan the entire repository.");
+      return;
+    }
     try {
-      await connect.mutateAsync([
-        {
-          provider: "github",
-          repositoryId: String(selectedRepo.id),
-          fullName: selectedRepo.fullName,
-          url: selectedRepo.htmlUrl,
-          branch: selectedRepo.defaultBranch,
-        },
-      ]);
+      await connect.mutateAsync({
+        repositories: [
+          {
+            provider: "github",
+            repositoryId: String(selectedRepo.id),
+            fullName: selectedRepo.fullName,
+            url: selectedRepo.htmlUrl,
+            branch: selectedRepo.defaultBranch,
+          },
+        ],
+        scanMode,
+        files,
+      });
       toast.success("Repository connected. Start a scan from the project page when you’re ready.");
-      router.push(`/projects/${projectId}`);
+      router.push(`/projects/${projectId}/overview`);
     } catch (error) {
       toast.error(error instanceof ApiError ? error.message : "Unable to connect the repository.");
     }
@@ -102,12 +128,17 @@ export function ConnectProjectPage({ projectId }: ConnectProjectPageProps) {
 
   const connectHref = `/api/github/connect?returnTo=${encodeURIComponent(`/projects/${projectId}/connect`)}`;
   const replacing = Boolean(project.repositories.length);
+  const onScopeStep = githubConnected && step === "scope" && selectedRepo;
 
   return (
     <div className="dashboard-page mx-auto max-w-2xl space-y-6">
       <PageHeader
-        title={replacing ? "Change repository" : "Connect repository"}
-        description={`Choose one GitHub repository for ${project.name}.`}
+        title={onScopeStep ? "Choose what to scan" : replacing ? "Change repository" : "Connect repository"}
+        description={
+          onScopeStep
+            ? `Scan all known manifests in ${selectedRepo.fullName}, or pick specific files — including custom names.`
+            : `Choose one GitHub repository for ${project.name}.`
+        }
       />
 
       {!githubConnected ? (
@@ -121,6 +152,57 @@ export function ConnectProjectPage({ projectId }: ConnectProjectPageProps) {
             <Button render={<a href={connectHref} />}>
               <GitBranch className="size-4" aria-hidden />
               Connect GitHub
+            </Button>
+            <Button render={<Link href="/projects" />} variant="ghost">
+              Back to projects
+            </Button>
+          </div>
+        </div>
+      ) : onScopeStep ? (
+        <div className="space-y-4 rounded-xl border bg-card p-6">
+          <p className="text-sm text-muted-foreground">
+            Repository{" "}
+            <span className="font-medium text-foreground">{selectedRepo.fullName}</span>
+            {selectedRepo.private ? " (private)" : null}. Companies often keep only package.json,
+            only a version catalog, or a filename that is not the usual default — pick that here so
+            later scans stay on the same files.
+          </p>
+          <ScanScopeFields
+            fullName={selectedRepo.fullName}
+            branch={selectedRepo.defaultBranch}
+            scanMode={scanMode}
+            files={files}
+            onScanModeChange={setScanModeOverride}
+            onFilesChange={setFilesOverride}
+            disabled={connect.isPending}
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              disabled={connect.isPending || (scanMode === "selected" && files.length === 0)}
+              onClick={() => {
+                void onSave();
+              }}
+            >
+              {connect.isPending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
+                  Saving…
+                </>
+              ) : (
+                <>
+                  <Check className="size-4" aria-hidden />
+                  Save and continue
+                </>
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={connect.isPending}
+              onClick={() => setStepOverride("repo")}
+            >
+              Back
             </Button>
             <Button render={<Link href="/projects" />} variant="ghost">
               Back to projects
@@ -183,22 +265,10 @@ export function ConnectProjectPage({ projectId }: ConnectProjectPageProps) {
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
-              disabled={!selectedRepo || connect.isPending}
-              onClick={() => {
-                void onConnectRepo();
-              }}
+              disabled={!selectedRepo}
+              onClick={onContinueToScope}
             >
-              {connect.isPending ? (
-                <>
-                  <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden />
-                  Connecting…
-                </>
-              ) : (
-                <>
-                  <Check className="size-4" aria-hidden />
-                  {replacing ? "Save repository" : "Connect repository"}
-                </>
-              )}
+              Continue
             </Button>
             <Button render={<a href={connectHref} />} variant="outline">
               Reconnect GitHub
@@ -206,7 +276,7 @@ export function ConnectProjectPage({ projectId }: ConnectProjectPageProps) {
             <Button render={<Link href="/projects" />} variant="ghost">
               Back to projects
             </Button>
-            <Button render={<Link href={`/projects/${projectId}?connect=skip`} />} variant="ghost">
+            <Button render={<Link href={`/projects/${projectId}/overview?connect=skip`} />} variant="ghost">
               Continue without GitHub
             </Button>
           </div>

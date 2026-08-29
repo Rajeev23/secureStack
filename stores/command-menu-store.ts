@@ -24,7 +24,11 @@ export const useCommandMenuStore = create<CommandMenuState>()(
       toggle: () => set({ isOpen: !get().isOpen }),
       addRecentPage: (page) =>
         set((state) => {
-          const filtered = state.recentPages.filter((p) => p.href !== page.href);
+          const current = state.recentPages[0];
+          if (current?.href === page.href && current.title === page.title) {
+            return state;
+          }
+          const filtered = state.recentPages.filter((item) => item.href !== page.href);
           return { recentPages: [page, ...filtered].slice(0, 8) };
         }),
       toggleFavorite: (href) =>
