@@ -11,6 +11,7 @@ type FindingsTableProps = {
   findings: Finding[];
   isLoading?: boolean;
   showProject?: boolean;
+  hrefFor?: (finding: Finding) => string;
   emptyTitle?: string;
   emptyDescription?: string;
 };
@@ -19,6 +20,7 @@ export function FindingsTable({
   findings,
   isLoading = false,
   showProject = false,
+  hrefFor,
   emptyTitle = "No findings",
   emptyDescription = "Start a scan to match CVEs, outdated packages, and end-of-life software.",
 }: FindingsTableProps) {
@@ -63,7 +65,7 @@ export function FindingsTable({
               <tr key={finding.id} className="border-b last:border-0 align-top">
                 <td className="px-4 py-2 font-medium">
                   <Link
-                    href={projectInventoryItemHref(finding.projectId, finding.componentName)}
+                    href={hrefFor?.(finding) ?? projectInventoryItemHref(finding.projectId, finding.componentName)}
                     className="hover:text-primary hover:underline"
                   >
                     {finding.componentName}

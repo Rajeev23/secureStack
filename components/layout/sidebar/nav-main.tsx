@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { primaryNavigation } from "@/config/navigation";
+import { primaryNavigation, visibleNavItems } from "@/config/navigation";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -10,15 +10,9 @@ import {
 import { NavCollapsibleItem } from "@/components/layout/sidebar/nav-collapsible";
 import { NavLinkItem } from "@/components/layout/sidebar/nav-link-item";
 import { getNavChildren, getNavItemKey } from "@/components/layout/sidebar/nav-utils";
-import { useProjects } from "@/features/projects/hooks/use-projects";
-import { withProjectNavItems } from "@/config/project-nav";
 
 export function NavMain() {
-  const { data: projects } = useProjects();
-  const items = useMemo(
-    () => withProjectNavItems(primaryNavigation, projects),
-    [projects],
-  );
+  const items = useMemo(() => visibleNavItems(primaryNavigation), []);
 
   return (
     <nav aria-label="Primary">

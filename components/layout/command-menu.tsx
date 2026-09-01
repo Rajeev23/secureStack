@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
-import { navigationGroups } from "@/config/navigation";
+import { isNavItemVisible, navigationGroups } from "@/config/navigation";
 import { useCommandMenuStore } from "@/stores/command-menu-store";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +24,7 @@ function getNavChildren(item: NavItem): NavItem[] {
 
 function flattenNavItems(items: NavItem[]): { title: string; href: string }[] {
   return items.flatMap((item) => {
+    if (!isNavItemVisible(item)) return [];
     const current = item.href ? [{ title: item.title, href: item.href }] : [];
     const children = flattenNavItems(getNavChildren(item));
     return [...current, ...children];

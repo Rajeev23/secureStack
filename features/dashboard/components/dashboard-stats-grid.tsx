@@ -1,14 +1,11 @@
 "use client";
 
-import { ErrorState } from "@/components/feedback/ErrorState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/features/dashboard/components/stat-card";
-import { useDashboardStats } from "@/features/dashboard/hooks/use-dashboard-stats";
+import type { DashboardStat } from "@/features/dashboard/hooks/use-dashboard-stats";
 
-export function DashboardStatsGrid() {
-  const { data, isLoading, isError, refetch } = useDashboardStats();
-
-  if (isLoading) {
+export function DashboardStatsGrid({ stats }: { stats: DashboardStat[] }) {
+  if (!stats.length) {
     return (
       <div
         className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5"
@@ -23,21 +20,9 @@ export function DashboardStatsGrid() {
     );
   }
 
-  if (isError || !data?.length) {
-    return (
-      <ErrorState
-        title="Unable to load stats"
-        description="Check the API route and try again."
-        onRetry={() => {
-          void refetch();
-        }}
-      />
-    );
-  }
-
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-      {data.map((stat) => (
+      {stats.map((stat) => (
         <StatCard key={stat.label} {...stat} />
       ))}
     </div>

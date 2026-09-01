@@ -1,7 +1,7 @@
 ---
 title: Project patterns
 description: Copy these when you add a feature — routes, nav, and reference pages.
-lastUpdated: 2026-08-29
+lastUpdated: 2026-09-01
 related:
   - href: /documentation/layout/sidebar
     title: Sidebar
@@ -65,16 +65,14 @@ Put shared client API helpers in `lib/api/`. Put GitHub, scan, and intelligence 
 
 | Feature | Copy this for |
 | --- | --- |
-| `features/dashboard/` | Greeting (first name + company subtitle), TanStack Query, scan-backed component counts |
-| `features/onboarding/` | Company name setup after signup |
-| `features/projects/` | Create project, GitHub OAuth, one repository per project, full-repo or selected-file scan, Start Scan, Overview / Inventory / Scans |
-| `features/inventory/` | Project inventory list; package pages at `/projects/:id/inventory/:name` |
-| `features/updates/` | Company-wide outdated packages (links to the package page) |
-| `features/findings/` | Security / update / EOL findings table (links to the package page) |
-| `features/scans/` | Scan hooks and `/api/projects/:id/scans` client |
-| `features/settings/` | Nested routes: Account, Company, Preferences |
+| `features/scan-session/` | Public scan intake, GitHub session cookie, sessionStorage report |
+| `features/dashboard/` | Empty state until a scan; KPIs from the in-tab report |
+| `features/inventory/` | Report list; package pages at `/inventory/:name` |
+| `features/updates/` | Outdated packages (route kept, not in the sidebar) |
+| `features/findings/` | Security / update / EOL findings table (route kept, not in the sidebar) |
+| `features/settings/` | Settings page at `/settings/preferences` |
 
-The dashboard heading greets the signed-in user by **first name** (first letter capitalized). The subtitle is `Open-source software health for {company name}`. With no projects, the dashboard and Projects list show an empty state with **Add Project** — not a wall of zeros. With projects, KPIs are **Projects**, open updates, security issues, critical findings, and EOL. Below the KPIs: Recent findings, Updates, then Recent scans. Issue, severity, and status colors live in `config/issue-palette.ts`. App chrome buttons use the default size (`pill` is for marketing/auth only).
+The dashboard is empty until you scan. After a scan, KPIs, updates, and findings come from `sessionStorage`. Issue, severity, and status colors live in `config/issue-palette.ts`. App chrome buttons use the default size (`pill` is for marketing only).
 
 After changing product behavior, update the matching docs (see [Writing docs](/documentation/writing-docs) and `docs/DOC_MAP.md`).
 

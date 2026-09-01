@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 import type { NavItem } from "@/types/navigation";
+import { isNavItemVisible } from "@/config/navigation";
 import { getNavChildren, getNavItemKey, isPathActive } from "@/components/layout/sidebar/nav-utils";
 
 type NavLinkItemProps = {
@@ -21,7 +22,7 @@ export function NavLinkItem({ item, onNavigate }: NavLinkItemProps) {
   const pathname = usePathname() ?? "";
   const { isMobile, setOpenMobile } = useSidebar();
 
-  if (!item.href) return null;
+  if (!item.href || !isNavItemVisible(item)) return null;
 
   const active = !item.external && isPathActive(pathname, item.href);
   const TrailingIcon = item.trailingIcon;

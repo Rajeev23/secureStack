@@ -1,20 +1,21 @@
 import {
   ArrowUpRight,
   BookOpen,
-  Building2,
-  CircleUser,
-  FolderKanban,
+  FolderSearch,
   LayoutDashboard,
-  SlidersHorizontal,
+  ScanSearch,
   Settings,
 } from "lucide-react";
 import type { NavGroup, NavItem } from "@/types/navigation";
 
-const settingsChildren: NavItem[] = [
-  { title: "Account", href: "/settings/account", icon: CircleUser },
-  { title: "Company", href: "/settings/company", icon: Building2 },
-  { title: "Preferences", href: "/settings/preferences", icon: SlidersHorizontal },
-];
+/** Omitted `visible` means the item is shown. */
+export function isNavItemVisible(item: { visible?: boolean }): boolean {
+  return item.visible !== false;
+}
+
+export function visibleNavItems(items: NavItem[]): NavItem[] {
+  return items.filter(isNavItemVisible);
+}
 
 export const primaryNavigation: NavItem[] = [
   {
@@ -23,26 +24,34 @@ export const primaryNavigation: NavItem[] = [
     icon: LayoutDashboard,
   },
   {
-    title: "Projects",
-    href: "/projects",
-    icon: FolderKanban,
+    title: "Scan",
+    href: "/scan",
+    icon: ScanSearch,
+  },
+  {
+    title: "Report",
+    href: "/inventory",
+    icon: FolderSearch,
   },
   {
     title: "Settings",
+    href: "/settings/preferences",
     icon: Settings,
-    children: settingsChildren,
   },
 ];
 
-export const secondaryNavigation: NavItem[] = [
-  {
-    title: "Documentation",
-    href: "/documentation",
-    icon: BookOpen,
-    external: true,
-    trailingIcon: ArrowUpRight,
-  },
-];
+export const documentationNavItem: NavItem = {
+  title: "Documentation",
+  href: "/documentation",
+  icon: BookOpen,
+  external: true,
+  trailingIcon: ArrowUpRight,
+  visible: false,
+};
+
+export const secondaryNavigation: NavItem[] = [documentationNavItem];
+
+export const isDocumentationVisible = isNavItemVisible(documentationNavItem);
 
 export const navigationGroups: NavGroup[] = [
   { title: "Application", items: primaryNavigation },

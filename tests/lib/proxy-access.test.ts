@@ -9,7 +9,7 @@ import {
 } from "@/lib/auth/proxy-access";
 
 describe("resolveProxyAccessDecision", () => {
-  it("allows public routes", () => {
+  it("allows the public product without a session", () => {
     expect(
       resolveProxyAccessDecision({
         pathname: "/",
@@ -19,51 +19,38 @@ describe("resolveProxyAccessDecision", () => {
     ).toBe("allow");
     expect(
       resolveProxyAccessDecision({
-        pathname: "/forgot-password",
-        isAuthenticated: false,
-        authBypassEnabled: false,
-      }),
-    ).toBe("allow");
-    expect(
-      resolveProxyAccessDecision({
-        pathname: "/reset-password",
-        isAuthenticated: false,
-        authBypassEnabled: false,
-      }),
-    ).toBe("allow");
-    expect(
-      resolveProxyAccessDecision({
-        pathname: "/auth/callback",
-        isAuthenticated: false,
-        authBypassEnabled: false,
-      }),
-    ).toBe("allow");
-  });
-
-  it("keeps signed-in users on the reset-password page", () => {
-    expect(
-      resolveProxyAccessDecision({
-        pathname: "/reset-password",
-        isAuthenticated: true,
-        authBypassEnabled: false,
-      }),
-    ).toBe("allow");
-  });
-
-  it("sends anonymous users to login for dashboard routes", () => {
-    expect(
-      resolveProxyAccessDecision({
         pathname: "/dashboard",
         isAuthenticated: false,
         authBypassEnabled: false,
       }),
-    ).toBe("redirect-login");
+    ).toBe("allow");
+    expect(
+      resolveProxyAccessDecision({
+        pathname: "/scan",
+        isAuthenticated: false,
+        authBypassEnabled: false,
+      }),
+    ).toBe("allow");
+    expect(
+      resolveProxyAccessDecision({
+        pathname: "/documentation",
+        isAuthenticated: false,
+        authBypassEnabled: false,
+      }),
+    ).toBe("allow");
   });
 
-  it("sends signed-in users away from login", () => {
+  it("sends leftover auth routes to the dashboard", () => {
     expect(
       resolveProxyAccessDecision({
         pathname: "/login",
+        isAuthenticated: false,
+        authBypassEnabled: false,
+      }),
+    ).toBe("redirect-dashboard");
+    expect(
+      resolveProxyAccessDecision({
+        pathname: "/signup",
         isAuthenticated: true,
         authBypassEnabled: false,
       }),
@@ -101,82 +88,11 @@ describe("Supabase auth cookies", () => {
       "sb-abc-auth-token-code-verifier",
     ]);
     expect(set).toHaveBeenCalledTimes(3);
-    expect(set).toHaveBeenCalledWith(
-      "sb-abc-auth-token.0",
-      "",
-      expect.objectContaining({ path: "/", maxAge: 0, httpOnly: true, sameSite: "lax", secure: false }),
-    );
-    expect(set).not.toHaveBeenCalledWith("theme", expect.anything(), expect.anything());
   });
 });
 
 describe("needsProxyAuthLookup", () => {
-  it("never waits on Auth for anonymous or public requests", () => {
-    expect(
-      needsProxyAuthLookup({
-        pathname: "/",
-        hasSessionCookie: false,
-        authBypassEnabled: false,
-      }),
-    ).toBe(false);
-    expect(
-      needsProxyAuthLookup({
-        pathname: "/login",
-        hasSessionCookie: false,
-        authBypassEnabled: false,
-      }),
-    ).toBe(false);
-    expect(
-      needsProxyAuthLookup({
-        pathname: "/dashboard",
-        hasSessionCookie: false,
-        authBypassEnabled: false,
-      }),
-    ).toBe(false);
-    expect(
-      needsProxyAuthLookup({
-        pathname: "/",
-        hasSessionCookie: true,
-        authBypassEnabled: false,
-      }),
-    ).toBe(false);
-    expect(
-      needsProxyAuthLookup({
-        pathname: "/api/auth/me",
-        hasSessionCookie: true,
-        authBypassEnabled: false,
-      }),
-    ).toBe(false);
-  });
-
-  it("verifies a session cookie on protected routes only", () => {
-    expect(
-      needsProxyAuthLookup({
-        pathname: "/dashboard",
-        hasSessionCookie: true,
-        authBypassEnabled: false,
-      }),
-    ).toBe(true);
-    expect(
-      needsProxyAuthLookup({
-        pathname: "/login",
-        hasSessionCookie: true,
-        authBypassEnabled: false,
-      }),
-    ).toBe(false);
-    expect(
-      needsProxyAuthLookup({
-        pathname: "/signup",
-        hasSessionCookie: true,
-        authBypassEnabled: false,
-      }),
-    ).toBe(false);
-    expect(
-      needsProxyAuthLookup({
-        pathname: "/dashboard",
-        hasSessionCookie: true,
-        authBypassEnabled: true,
-      }),
-    ).toBe(false);
+  it("never waits on Auth", () => {
+    expect(needsProxyAuthLookup()).toBe(false);
   });
 });

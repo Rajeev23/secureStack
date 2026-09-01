@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { LogoIcon } from "@/components/feedback/logo";
+import { BrandMark } from "@/components/layout/brand-mark";
 import { DashboardCta } from "@/components/shared/dashboard-cta";
 import { HOME_CTA, HOME_FOOTER, HOME_NAV } from "@/features/home/data/copy";
+import { isDocumentationVisible } from "@/config/navigation";
 
 export function HomeFooter() {
   return (
@@ -10,7 +11,7 @@ export function HomeFooter() {
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-sm">
             <Link href="/" aria-label="SecureStack home" className="inline-flex items-center gap-2 font-semibold tracking-tight">
-              <LogoIcon className="size-6" />
+              <BrandMark className="size-6" />
               <span>SecureStack</span>
             </Link>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
@@ -37,14 +38,16 @@ export function HomeFooter() {
                   {HOME_CTA.primary}
                 </Link>
               </li>
-              <li>
-                <Link
-                  href="/login"
-                  className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground"
-                >
-                  Sign in
-                </Link>
-              </li>
+              {isDocumentationVisible ? (
+                <li>
+                  <Link
+                    href="/documentation"
+                    className="flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    Documentation
+                  </Link>
+                </li>
+              ) : null}
             </ul>
           </nav>
         </div>

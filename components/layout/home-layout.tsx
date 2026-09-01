@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Menu } from "lucide-react";
-import { LogoIcon } from "@/components/feedback/logo";
+import { BrandMark } from "@/components/layout/brand-mark";
 import { buttonVariants } from "@/components/ui/button";
 import {
   Sheet,
@@ -12,41 +12,28 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { useUserStore } from "@/features/auth/stores/user-store";
 import { HOME_CTA, HOME_NAV } from "@/features/home/data/copy";
+import { isDocumentationVisible } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 
 function HomeBrand() {
   return (
     <Link href="/" className="inline-flex items-center gap-2 font-semibold tracking-tight">
-      <LogoIcon className="size-7" />
+      <BrandMark className="size-7" />
       <span>SecureStack</span>
     </Link>
   );
 }
 
-function AuthActions({ className }: { className?: string }) {
-  const status = useUserStore((state) => state.status);
-  const user = useUserStore((state) => state.user);
-  const signedIn = status === "authenticated" && Boolean(user);
-
-  if (signedIn) {
-    return (
-      <Link
-        href="/dashboard"
-        className={cn(buttonVariants({ size: "sm" }), className)}
-      >
-        Dashboard
-      </Link>
-    );
-  }
-
+function HomeActions({ className }: { className?: string }) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <Link href="/login" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
-        Sign in
-      </Link>
-      <Link href="/signup" className={cn(buttonVariants({ size: "sm" }))}>
+      {isDocumentationVisible ? (
+        <Link href="/documentation" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
+          Docs
+        </Link>
+      ) : null}
+      <Link href={HOME_CTA.signupHref} className={cn(buttonVariants({ size: "sm" }))}>
         {HOME_CTA.primary}
       </Link>
     </div>
@@ -79,7 +66,7 @@ export function HomeLayout({
           </nav>
 
           <div className="ml-auto hidden md:block">
-            <AuthActions />
+            <HomeActions />
           </div>
 
           <Sheet>
@@ -105,7 +92,7 @@ export function HomeLayout({
                 ))}
               </nav>
               <div className="mt-6">
-                <AuthActions className="w-full justify-stretch [&>a]:flex-1" />
+                <HomeActions className="w-full justify-stretch [&>a]:flex-1" />
               </div>
               <p className="sr-only">{primaryCtaLabel}</p>
             </SheetContent>

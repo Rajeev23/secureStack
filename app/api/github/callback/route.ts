@@ -1,12 +1,12 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { requireSession } from "@/lib/auth/session";
 import {
   exchangeGitHubCode,
   GITHUB_OAUTH_STATE_COOKIE,
   parseOauthStateCookie,
 } from "@/services/github/oauth";
-import { saveGitHubConnection } from "@/services/api/github";
+import { getGitHubAuthenticatedUser } from "@/services/github/api";
+import { setGitHubSessionCookie } from "@/services/github/session-token";
 
 function clearStateCookie(response: NextResponse) {
   response.cookies.set(GITHUB_OAUTH_STATE_COOKIE, "", {
@@ -30,14 +30,7 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const cookieStore = await cookies();
   const stored = parseOauthStateCookie(cookieStore.get(GITHUB_OAUTH_STATE_COOKIE)?.value);
-  const returnTo = stored?.returnTo ?? "/projects";
-
-  const session = await requireSession();
-  if (!session.ok) {
-    const login = new URL("/login", request.url);
-    login.searchParams.set("redirect", returnTo);
-    return clearStateCookie(NextResponse.redirect(login));
-  }
+  const returnTo = stored?.returnTo ?? "/scan";
 
   const code = requestUrl.searchParams.get("code");
   const state = requestUrl.searchParams.get("state");
@@ -48,10 +41,12 @@ export async function GET(request: Request) {
 
   try {
     const token = await exchangeGitHubCode(code);
-    await saveGitHubConnection(session.userId, token);
+    const user = await getGitHubAuthenticatedUser(token.accessToken);
     const success = new URL(returnTo, request.url);
     success.searchParams.set("github", "connected");
-    return clearStateCookie(NextResponse.redirect(success));
+    const response = clearStateCookie(NextResponse.redirect(success));
+    setGitHubSessionCookie(response, { accessToken: token.accessToken, login: user.login });
+    return response;
   } catch (error) {
     console.error("GitHub callback failed", error);
     return failRedirect(request, returnTo, "github_failed");

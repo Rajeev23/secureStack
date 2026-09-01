@@ -36,4 +36,9 @@ describe("getBreadcrumbsFromPath", () => {
     );
     expect(crumbs.at(-1)?.label).toBe("@hono/node-server");
   });
+
+  it("joins scoped package segments on the session inventory route", () => {
+    const crumbs = getBreadcrumbsFromPath("/inventory/%40hono/node-server");
+    expect(crumbs.map((item) => item.label)).toEqual(["Report", "@hono/node-server"]);
+  });
 });

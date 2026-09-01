@@ -1,23 +1,14 @@
 "use client";
 
-import { getDisplayUser, useUserStore } from "@/features/auth";
-import { useIsClient } from "@/hooks/use-is-client";
-import { getDashboardGreeting, getGreetingFirstName } from "@/features/dashboard/lib/greeting";
-import { useCompanyContextStore } from "@/stores/company-context-store";
+import { getDashboardGreeting } from "@/features/dashboard/lib/greeting";
+import { useHydratedScanSession } from "@/features/scan-session/hooks/use-hydrated-scan-session";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function DashboardGreeting() {
-  const mounted = useIsClient();
-  const rawUser = useUserStore((state) => state.user);
-  const status = useUserStore((state) => state.status);
-  const company = useCompanyContextStore((state) => state.company);
-  const companyStatus = useCompanyContextStore((state) => state.status);
-  const firstName = getGreetingFirstName(getDisplayUser(rawUser).name);
+  const { scan, hydrated } = useHydratedScanSession();
   const greeting = getDashboardGreeting();
-  const scopeName = company?.name ?? "your company";
-  const contextPending = companyStatus === "idle" || companyStatus === "loading";
 
-  if (!mounted || status === "loading") {
+  if (!hydrated) {
     return (
       <div className="space-y-1.5">
         <Skeleton className="h-7 w-56 max-w-full" aria-hidden />
@@ -29,19 +20,13 @@ export function DashboardGreeting() {
   return (
     <div className="space-y-1">
       <h1 className="font-heading text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-        {firstName ? (
-          <>
-            {greeting}, <span className="text-primary">{firstName}</span>
-          </>
-        ) : (
-          greeting
-        )}
+        {greeting}
       </h1>
-      {contextPending ? (
-        <Skeleton className="h-4 w-72 max-w-full" aria-hidden />
-      ) : (
-        <p className="text-page-description">Patch and dependency update intelligence for {scopeName}</p>
-      )}
+      <p className="text-page-description">
+        {scan
+          ? `Update intelligence for ${scan.label}. This report is only in your browser.`
+          : "Patch and dependency update intelligence. No account. Nothing stored."}
+      </p>
     </div>
   );
 }

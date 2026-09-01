@@ -128,8 +128,11 @@ export function getBreadcrumbsFromPath(
       pathname.startsWith(`${lastWithHref.href}/`)
     ) {
       const rest = pathname.slice(lastWithHref.href.length).split("/").filter(Boolean);
-      if (lastWithHref.href === "/projects") {
-        return [...trail, ...projectRestCrumbs(rest, projectNames)];
+      if (lastWithHref.href === "/inventory" && rest.length) {
+        return [
+          ...trail,
+          { label: rest.map((part) => decodeURIComponent(part)).join("/") },
+        ];
       }
       return [
         ...trail,
@@ -144,6 +147,12 @@ export function getBreadcrumbsFromPath(
       ];
     }
     return trail;
+  }
+
+  if (pathname === "/projects" || pathname.startsWith("/projects/")) {
+    const rest = pathname.replace(/^\/projects\/?/, "").split("/").filter(Boolean);
+    if (rest.length === 0) return [{ label: "Projects" }];
+    return [{ label: "Projects", href: "/projects" }, ...projectRestCrumbs(rest, projectNames)];
   }
 
   const segments = pathname.split("/").filter(Boolean);

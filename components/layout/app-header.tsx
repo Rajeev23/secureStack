@@ -1,7 +1,8 @@
 "use client";
 
-import { LogOut, Moon, MoreHorizontal, Sun } from "lucide-react";
+import { Moon, MoreHorizontal, ScanSearch, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
+import Link from "next/link";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,10 +13,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Breadcrumbs } from "@/components/layout/breadcrumbs";
-import { CommandMenuTrigger } from "@/components/layout/command-menu";
+// Restore header search: import { CommandMenuTrigger } from "@/components/layout/command-menu";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
-import { NotificationBell } from "@/components/layout/notification-bell";
-import { signOut } from "@/lib/auth/client";
 import { useIsClient } from "@/hooks/use-is-client";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -51,12 +50,9 @@ function HeaderMoreMenu() {
           {isDark ? "Light mode" : "Dark mode"}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="cursor-pointer text-destructive focus:text-destructive"
-          onClick={() => void signOut()}
-        >
-          <LogOut className="size-4" aria-hidden />
-          Sign out
+        <DropdownMenuItem className="cursor-pointer" render={<Link href="/scan" />}>
+          <ScanSearch className="size-4" aria-hidden />
+          New scan
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -84,27 +80,26 @@ export function AppHeader() {
         </div>
 
         <div className="col-start-3 row-start-1 flex items-center justify-end gap-1 pr-4 sm:gap-2 sm:pr-5">
-          <CommandMenuTrigger />
-          <NotificationBell />
+          {/* Restore header search: <CommandMenuTrigger /> */}
           <div className="hidden items-center gap-1 sm:flex sm:gap-2">
             <ThemeToggle className={headerIconClass} />
             <Tooltip>
               <TooltipTrigger
                 render={
                   <Button
-                    type="button"
+                    nativeButton={false}
+                    render={<Link href="/scan" />}
                     variant="ghost"
                     size="icon"
                     data-header-action
                     className={`${headerIconClass} hover:bg-transparent`}
-                    aria-label="Sign out"
-                    onClick={() => void signOut()}
+                    aria-label="New scan"
                   >
-                    <LogOut className="size-4" aria-hidden />
+                    <ScanSearch className="size-4" aria-hidden />
                   </Button>
                 }
               />
-              <TooltipContent>Sign out</TooltipContent>
+              <TooltipContent>New scan</TooltipContent>
             </Tooltip>
           </div>
           <div className="flex items-center gap-1 sm:hidden">

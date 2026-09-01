@@ -1,50 +1,60 @@
 "use client";
 
 import { useState } from "react";
-import { ErrorState } from "@/components/feedback/ErrorState";
+import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { TransitiveNote } from "@/features/inventory/components/transitive-note";
 import { UpdateFeedList } from "@/features/updates/components/update-feed-list";
-import { useAvailableUpdates } from "@/features/scans/hooks/use-scans";
+import { paginatedInventoryFromSession, sessionInventoryHref } from "@/features/scan-session/lib/derive";
+import { useHydratedScanSession } from "@/features/scan-session/hooks/use-hydrated-scan-session";
+import { DEFAULT_PAGE_SIZE } from "@/lib/pagination";
 
 export function UpdatesPage() {
+  const { scan, hydrated } = useHydratedScanSession();
   const [includeTransitive, setIncludeTransitive] = useState(false);
-  const { data, isLoading, isError, refetch } = useAvailableUpdates(undefined, includeTransitive);
-  const rows = data?.components ?? [];
+  const page = scan
+    ? paginatedInventoryFromSession(scan, {
+        includeTransitive,
+        outdatedOnly: true,
+        offset: 0,
+        limit: DEFAULT_PAGE_SIZE,
+      })
+    : null;
 
   return (
     <div className="dashboard-page space-y-6">
       <PageHeader
         title="Updates"
         description="New upstream versions with a recommended action. Open a row for current → new, what changed, and findings."
+        actions={
+          <Button render={<Link href="/scan" />} variant="outline" size="sm">
+            New scan
+          </Button>
+        }
       />
 
-      {isLoading ? (
+      {!hydrated ? (
         <div className="space-y-2">
           <Skeleton className="h-16 w-full" />
           <Skeleton className="h-16 w-full" />
         </div>
-      ) : isError ? (
-        <ErrorState
-          title="Unable to load updates"
-          description="Scan a project first, then try again."
-          onRetry={() => {
-            void refetch();
-          }}
-        />
       ) : (
         <>
-          <TransitiveNote
-            tiers={data?.tiers}
-            includeTransitive={includeTransitive}
-            onToggle={setIncludeTransitive}
-          />
+          {scan ? (
+            <TransitiveNote
+              tiers={page?.tiers}
+              includeTransitive={includeTransitive}
+              onToggle={setIncludeTransitive}
+            />
+          ) : null}
           <UpdateFeedList
-            items={rows}
-            groups={includeTransitive ? [] : data?.transitiveGroups}
+            items={page?.components ?? []}
+            groups={includeTransitive ? [] : page?.transitiveGroups}
+            hrefFor={(item) => sessionInventoryHref(item.name)}
             emptyTitle="No updates waiting"
-            emptyDescription="Scan a connected repository. Components already on the latest version stay off this list."
+            emptyDescription="Scan GitHub or upload a file. Components already on the latest version stay off this list."
           />
         </>
       )}

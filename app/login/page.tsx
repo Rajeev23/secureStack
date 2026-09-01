@@ -1,8 +1,5 @@
-import type { Metadata } from "next";
-import { LoginPage } from "@/features/auth";
-
-export const metadata: Metadata = { title: "Sign in" };
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <LoginPage />;
+  redirect("/");
 }

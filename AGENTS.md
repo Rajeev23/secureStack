@@ -6,9 +6,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Project Architecture
 
-**SecureStack** — enterprise patch and dependency update intelligence, built with **Next.js 16 (App Router)**, **React 19**, **TypeScript**, **Tailwind CSS 4**, **shadcn/ui**, and **Zustand**.
+**SecureStack** — open-source patch and dependency update intelligence, built with **Next.js 16 (App Router)**, **React 19**, **TypeScript**, **Tailwind CSS 4**, **shadcn/ui**, and **Zustand**.
 
-Customers are **companies**. Do not use tenant in the product UI. Database keys use `company_id`.
+This product mode has **no companies, no users, no signup, and no required database**. A visitor connects GitHub or uploads a file and gets a report in this browser tab.
 
 ## High-level layout
 
@@ -17,20 +17,18 @@ securestack/
 ├── app/                  # Routes only — thin page files, layouts, loading/error
 ├── features/             # Feature modules — page UI, feature data, feature stores
 ├── services/
-│   ├── api/              # Company-scoped DB orchestration
 │   ├── github/           # GitHub OAuth + REST
 │   ├── scanner/          # Manifest parse, repository walk
 │   ├── intelligence/     # OSV, EOL, versions, P1–P4, recommendations
-│   └── monitoring/      # Scan interval, digest, Slack/email
-├── server/supabase/      # Supabase Auth + admin/server clients
+│   └── session-scan/     # Stateless GitHub / SBOM / file scans
 ├── components/           # Shared UI: layout shell, feedback, design-system primitives
-├── config/               # Static app config (navigation, project-nav, app)
-├── stores/               # Global client state (sidebar, layout, command menu, company context)
-├── lib/                  # Pure utilities + client infra (auth, api, crypto, zustand)
+├── config/               # Static app config (navigation, app)
+├── stores/               # Global client state (sidebar, layout, command menu)
+├── lib/                  # Pure utilities + client infra (api, crypto, zustand)
 ├── types/                # Shared TypeScript types
 ├── hooks/                # Shared React hooks
 ├── styles/               # Global CSS and design tokens
-└── proxy.ts              # Auth gate (Supabase session cookie check)
+└── proxy.ts              # Public access (no login wall)
 ```
 
 > **Note:** A legacy `component/` folder (singular) may still exist from an earlier scaffold. The active codebase uses `components/` (plural). Do not add new code to `component/`.
@@ -39,14 +37,14 @@ securestack/
 
 ```
 Browser request
-  → proxy.ts               (public pages pass through; session cookies verified on app routes)
+  → proxy.ts               (app is public; leftover /login URLs redirect to /dashboard)
   → app/layout.tsx         (root HTML, Providers, global styles)
-  → app/(dashboard)/layout.tsx   (AppShell: sidebar + header + main)
+  → app/(dashboard)/layout.tsx   (AppShell: sidebar + header + main — no session check)
   → app/(dashboard)/<route>/page.tsx   (metadata + re-export feature page)
   → features/<name>/components/*-page.tsx   (actual page UI)
 ```
 
-Public routes live outside the dashboard group (`app/page.tsx` home, `app/login/page.tsx`, `app/signup/page.tsx`, `app/forgot-password/page.tsx`, `app/reset-password/page.tsx`, `app/documentation/`). Authenticated onboarding lives at `app/onboarding/` for accounts without a company. Signup creates a Supabase Auth user and sends them to `/onboarding`. Incomplete onboarding is redirected from `app/(dashboard)/layout.tsx` to `/onboarding`.
+Public home is `app/page.tsx`. Scan intake is `/scan`. Dashboard, inventory, updates, and findings read the last report from `sessionStorage`. `/documentation` is public. Leftover `/login`, `/signup`, and `/onboarding` redirect away.
 
 ## Folder responsibilities
 
@@ -92,13 +90,13 @@ features/<feature-name>/
 └── types/                # Feature-scoped types (optional)
 ```
 
-**Current features:** `home`, `auth`, `onboarding`, `dashboard`, `projects`, `inventory`, `updates`, `scans`, `findings`, `settings`, `documentation`.
+**Current features:** `home`, `scan-session`, `dashboard`, `inventory`, `updates`, `scans`, `findings`, `settings`, `documentation`.
 
-Company and user account settings live under `features/settings/`. UI copy says **Company**, never Tenant.
+Settings is Preferences only (theme and layout). There is no account or company page in the product UI.
 
 **Rules:**
 - Feature pages import from `@/components/ui/*` and `@/components/shared/*`, not from other features directly.
-- Server domain (GitHub, scanner, intelligence, monitoring) belongs in `services/`.
+- Server domain (GitHub, scanner, intelligence, session-scan) belongs in `services/`.
 - Pure helpers and client infra belong in `lib/`, `hooks/`, or `components/`.
 - Export the page component from `index.ts`; route files import from the barrel.
 
@@ -108,13 +106,12 @@ Company and user account settings live under `features/settings/`. UI copy says 
 
 | Path | Purpose |
 |------|---------|
-| `services/api/` | Company-scoped DB workflows (auth, company, projects, GitHub connection, scans, findings) |
 | `services/github/` | GitHub OAuth and REST. Tokens never leave the server. |
-| `services/scanner/` | Manifest/lockfile parsers, repository walk, scan list snapshot shape |
+| `services/scanner/` | Manifest/lockfile parsers, repository walk |
 | `services/intelligence/` | Latest versions, OSV/CVE, EOL, impact, P1–P4, recommendations |
-| `services/monitoring/` | Scan interval, digest due, Slack/email dispatch |
+| `services/session-scan/` | Stateless GitHub / SBOM / file scans (no database writes) |
 
-Do not add a new `lib/<noun>/` folder for the next domain noun. GitHub, OSV, Slack, and scan engines go in `services/`.
+Do not add a new `lib/<noun>/` folder for the next domain noun. GitHub, OSV, and scan engines go in `services/`.
 
 ### `components/` — shared UI
 
@@ -126,17 +123,16 @@ Do not add a new `lib/<noun>/` folder for the next domain noun. GitHub, OSV, Sla
 | `components/feedback/` | Error boundaries, skeletons, error states |
 | `components/providers.tsx` | Root client providers (theme, tooltip, toast) |
 
-`AppShell` (`components/layout/app-shell.tsx`) is the dashboard chrome: sidebar, header, command menu, breadcrumbs sync, and content area.
+`AppShell` (`components/layout/app-shell.tsx`) is the dashboard chrome: sidebar, header, breadcrumbs sync, and content area. Header search / ⌘K command menu is commented out until we need it.
 
 ### `config/` — static configuration
 
 | File | Purpose |
 |------|---------|
 | `config/navigation.ts` | Sidebar nav groups (`primaryNavigation`, `secondaryNavigation`) |
-| `config/project-nav.ts` | Nested project names under sidebar Projects (cap eight) |
 | `config/issue-palette.ts` | Colors and labels for issue type, severity, finding status, version drift, EOL, and scan state |
 
-When adding a sidebar route, update `config/navigation.ts` so the sidebar and breadcrumbs stay in sync. Company settings live under Settings. Primary nav is Dashboard, Projects, and Settings. Projects is hidden until the company has at least one project. With two or more projects, project names nest under Projects (cap eight). A project opens at `/projects/:id/overview`. Inventory and scans are sibling routes. Package updates, what changed, and findings live on `/projects/:id/inventory/:name`. Breadcrumbs show the project name, not the UUID.
+When adding a sidebar route, update `config/navigation.ts` so the sidebar and breadcrumbs stay in sync. Primary nav is Dashboard, Scan, Report (`/inventory`), and Settings (opens preferences). Package detail is `/inventory/:name`. `/updates` and `/findings` still exist but are not in the sidebar. Documentation is in `secondaryNavigation`; set `visible: false` on that item to hide it from the sidebar and the home header/footer. The `/documentation` route still works if you open the URL.
 
 ### `stores/` — global client state
 
@@ -147,7 +143,8 @@ Zustand stores for UI chrome (not feature business logic):
 | `sidebar-store` | Sidebar open/collapsed state (persisted) |
 | `layout-store` | Content width (`full` vs `contained`) (persisted) |
 | `command-menu-store` | Command palette + recent pages (persisted) |
-| `company-context-store` | Active company for the sidebar label |
+
+The scan report lives in `features/scan-session/stores/scan-session-store.ts` (`sessionStorage`, not localStorage).
 
 Feature-specific state lives inside `features/<name>/stores/`. Brand colors are fixed in `styles/globals.css` (Geist ink/canvas). Light/dark uses `next-themes` only — there is no color picker.
 
@@ -250,23 +247,15 @@ When product behavior changes, update docs **in the same change**. Use the map: 
 | `features/documentation/data/docs-nav.ts` | New or renamed doc pages |
 | This file (`AGENTS.md`) | Conventions agents must follow |
 
-Do not leave documentation for a follow-up PR if the code already changed the flow (onboarding, company, GitHub, settings, auth).
+Do not leave documentation for a follow-up PR if the code already changed the flow (home, scan, GitHub, dashboard).
 
 ## Auth
 
-- `proxy.ts` is the auth gate. Public routes (`/`, `/login`, `/signup`, `/documentation`, `/api`, static files) do not wait on Auth. Anonymous requests with no `sb-*-auth-token` cookie are redirected to `/login` immediately. When a session cookie is present on a protected route, the proxy verifies it with `getClaims()` (signed JWT, never `getSession()`, never a fake user id). If verification fails, access is denied. API handlers still call `requireSession` / `getSessionUserId`. Do not wrap login/signup/session Supabase clients in fetch abort timeouts — that turned working Auth (often 5–8s) into 401/503. Hang prevention is skip-lookup on public/anonymous traffic, not aborting Auth.
-- Public routes: `/`, `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/auth/callback`, `/documentation`. Signup/login/forgot-password are rate-limited; signup and forgot-password avoid email enumeration.
-- Signup: `POST /api/auth/signup` with name, email, and password (min length 8) → `/onboarding`. Invalid email returns a field error.
-- Forgot password: `POST /api/auth/forgot-password` emails a reset link; `/auth/callback` exchanges the code; `POST /api/auth/reset-password` sets the new password.
-- Account: Settings → Account (`/settings/account`) shows name, email, and update password (`GET/PATCH /api/account`, `POST /api/account/password`).
-- Onboarding: `POST /api/onboarding` with company name creates the company and application `users` row (role `ADMIN`).
-- Logout: `POST /api/auth/logout` or `signOut()` from `lib/auth/client.ts` — revokes the Auth session, expires `sb-*-auth-token` cookies, and sends the browser to `/login`. After logout, `/api/auth/me` is `401` and `/dashboard` redirects to login.
-- Set `AUTH_DEV_BYPASS=true` in `.env.local` to skip the login wall during UI work. It is ignored in production. Leave it `false` to test login/logout — with bypass on, `/dashboard` stays reachable without a session.
-- Required env: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (or legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY`), `SUPABASE_SERVICE_ROLE_KEY`. See `docs/supabase/README.md`.
-- GitHub OAuth (repository access, not login): `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_TOKEN_ENCRYPTION_KEY`. Scope is `read:user repo` so private repos can be listed and read; scans never write.
-- Projects: one GitHub repository per project. Creating a project goes to Connect GitHub; Back, refresh, or opening the project again resumes that step until a repo is linked **and** scan scope is saved (`scanMode` `full` or `selected` files on `projects.monitoring`). `GET/POST /api/projects`, `GET/PATCH/DELETE /api/projects/:id`, `GET /api/github/repository-files`. Removing a project also deletes its scans and findings.
-- Scans: `POST /api/projects/:id/scans` reads GitHub on the server (entire repo or the project’s saved file list), enriches up to 400 unique packages (OSV / latest / GitHub release notes / EOL; infra and direct first), and stores inventory on `scans.result_snapshot`. Findings are derived from that snapshot (not inserted into `findings`). `POST /api/projects/:id/sbom` imports CycloneDX or SPDX JSON the same way (`source: sbom`). Inventory is discovery (default: infra pins from `bom.yaml` / `versions.yaml` + declared dependencies + security transitives). Open a package at `/projects/:id/inventory/:name` for current → new, what changed, and findings. Company-wide `/inventory`, `/updates`, `/findings`, and `/scans` URLs still exist but are not in the sidebar. Scan list APIs omit the component tree; inventory is paginated (`transitive=1` includes lockfile noise). `GET /api/projects/:id/components?name=` looks up one package including transitives.
-- Scheduled scans: `GET/POST /api/cron/scans` (Vercel Cron + `CRON_SECRET`) or `POST /api/scans/scheduled` for the signed-in company. Interval, Slack webhook, notify email, and digest live on `companies.monitoring` (webhook URL is never returned to the client). Per-project on/off, environment, and scan scope live on `projects.monitoring`. Existing databases need `docs/supabase/04-phase4.sql`. Optional `RESEND_API_KEY` + `NOTIFY_FROM_EMAIL` for email alerts.
+- There is **no login wall**. `proxy.ts` allows dashboard and scan routes without a session. Leftover `/login`, `/signup`, and `/onboarding` redirect to `/dashboard`.
+- GitHub OAuth is repository access, not product login: `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_TOKEN_ENCRYPTION_KEY`. Scope is `read:user repo`. Scans never write. Optional `GITHUB_TOKEN` skips OAuth on a self-hosted server.
+- Session GitHub token: encrypted httpOnly cookie `ss_github` (~1 hour). Never returned to the browser. Never written to Postgres.
+- Scans: `POST /api/session/scan` with `source: github | sbom | files`. GitHub accepts `repositories: [{ fullName, branch? }]` (up to 8) and optional `scanMode: selected` with `files` paths. Enriches up to 400 unique packages (OSV / latest / GitHub release notes / EOL; infra and direct first). The JSON report is returned once; the UI keeps it in `sessionStorage`. Report (`/inventory`) default is infra pins + declared dependencies + security transitives. Open a package at `/inventory/:name`. File search is `GET /api/session/github/files`.
+- Required env for GitHub OAuth: `APP_URL`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_TOKEN_ENCRYPTION_KEY`. File/SBOM scans work without GitHub.
 
 ## Quality checks (before push)
 
@@ -285,7 +274,7 @@ This runs, in order: **ESLint** → **TypeScript** → **unit tests** → **nav 
 | `pnpm test:run` | Vitest unit tests |
 | `pnpm validate:nav` | Every `href` in `config/navigation.ts` has a matching `app/(dashboard)/.../page.tsx` |
 | `pnpm check` | All of the above + production build |
-| `pnpm test:e2e` | Playwright auth shell (home, signup, login, forgot/reset, dashboard redirect, API contracts) |
+| `pnpm test:e2e` | Playwright smoke (home, scan, public dashboard, session scan API) |
 
 **Before pushing:** a Husky **pre-push** hook runs `pnpm check`. After `pnpm install`, hooks are enabled via the `prepare` script. To bypass once: `git push --no-verify`.
 
@@ -298,5 +287,5 @@ When adding a sidebar route, run `pnpm validate:nav` (or `pnpm check`) so CI doe
 - **UI:** Base UI primitives (via shadcn/ui), lucide-react icons, cmdk (command menu)
 - **Theming:** next-themes (class-based light/dark). Colors are locked in `styles/globals.css`.
 - **Toasts:** sonner
-- **State:** zustand (+ `persist` middleware for sidebar, layout, command menu)
-- **Auth / DB:** Supabase Auth + PostgreSQL (RLS). SQL for tables lives in `docs/supabase/`.
+- **State:** zustand (`persist` for sidebar, layout, command menu; sessionStorage for the scan report)
+- **Auth / DB:** Not required for session scans. Leftover Supabase helpers remain in the repo.

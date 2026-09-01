@@ -25,10 +25,10 @@ export default function DocsRootLayout({ children }: { children: ReactNode }) {
 
           <div className="ml-auto flex items-center gap-2">
             <Link
-              href="/login"
+              href="/scan"
               className={cn(buttonVariants({ variant: "outline", size: "sm" }), "inline-flex")}
             >
-              Sign in
+              Scan
               <ArrowUpRight className="size-3.5" aria-hidden />
             </Link>
           </div>

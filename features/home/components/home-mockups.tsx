@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Check, FileJson, GitBranch, ShieldAlert } from "lucide-react";
+import { Check, GitBranch, ShieldAlert } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProgressBar } from "@/components/ui/progress";
 import { StatusPill } from "@/components/shared/status-pill";
@@ -127,52 +127,5 @@ export function HeroBackupVisual() {
         </p>
       </div>
     </MockFrame>
-  );
-}
-
-export function HowItWorksVisual({ step }: { step: 1 | 2 | 3 }) {
-  if (step === 1) {
-    return (
-      <div className="flex items-center justify-center gap-3 text-sm" aria-hidden>
-        <DeviceChip icon={GitBranch} label="Git repo" />
-        <span className="text-muted-foreground">→</span>
-        <DeviceChip icon={FileJson} label="SBOM" />
-      </div>
-    );
-  }
-
-  if (step === 2) {
-    return (
-      <div className="flex items-center justify-center gap-3 text-sm" aria-hidden>
-        <DeviceChip icon={FileJson} label="Components" />
-        <span className="text-muted-foreground">→</span>
-        <DeviceChip icon={ShieldAlert} label="CVEs / EOL" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col items-center gap-1.5 text-sm" aria-hidden>
-      <DeviceChip icon={GitBranch} label="Inventory" />
-      <span className="text-muted-foreground">↓</span>
-      <span className="rounded-full border bg-background px-2.5 py-1 text-xs font-medium">
-        SecureStack
-      </span>
-      <span className="text-muted-foreground">↓</span>
-      <DeviceChip icon={ShieldAlert} label="Patch priority" />
-      <span className="mt-1 flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
-        <Check className="size-3.5" />
-        Ranked
-      </span>
-    </div>
-  );
-}
-
-function DeviceChip({ icon: Icon, label }: { icon: typeof GitBranch; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border bg-background px-2.5 py-1 text-xs font-medium">
-      <Icon className="size-3.5 text-muted-foreground" />
-      {label}
-    </span>
   );
 }

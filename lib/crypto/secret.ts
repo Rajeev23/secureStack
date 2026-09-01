@@ -6,7 +6,7 @@ function getKey(): Buffer {
   const secret = process.env.GITHUB_TOKEN_ENCRYPTION_KEY;
   if (!secret || secret.length < 16) {
     throw new Error(
-      "GITHUB_TOKEN_ENCRYPTION_KEY is required (min 16 characters). See docs/supabase/README.md.",
+      "GITHUB_TOKEN_ENCRYPTION_KEY is required (min 16 characters).",
     );
   }
   return createHash("sha256").update(secret).digest();

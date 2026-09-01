@@ -1,16 +1,14 @@
 # SecureStack
 
-**Patch and dependency update intelligence**. A company connects GitHub repositories. SecureStack discovers the open-source versions in use, detects new releases, explains what changed, and recommends whether to update.
+**Patch and dependency update intelligence**. Connect GitHub or upload a file. SecureStack discovers the open-source versions in use, detects new releases, explains what changed, and recommends whether to update.
 
-Phase 4 is in this repository: **Supabase Auth**, **company** accounts, **projects**, **real GitHub connection**, **repository scanning**, **CVE / latest-version / release notes / EOL**, **dependency tiers**, **scheduled monitoring**, **P1–P4 impact**, **Slack/email alerts**, and **SBOM upload**.
+**No signup. No user database.** The report stays in this browser tab. GitHub tokens are not written to Postgres.
 
 ## Stack
 
-- **Next.js 16** (App Router, `proxy.ts` auth gate)
+- **Next.js 16** (App Router)
 - **React 19**, **TypeScript**, **Tailwind CSS 4**, **shadcn/ui**
-- **Supabase** Auth + PostgreSQL (RLS)
-- **Zustand** (UI chrome state), **TanStack Query**
-- **react-hook-form** + **zod** (forms)
+- **Zustand** (UI chrome + session scan), **TanStack Query**
 
 ## Getting started
 
@@ -19,41 +17,25 @@ pnpm install
 cp .env.example .env.local
 ```
 
-Follow **[docs/supabase/README.md](./docs/supabase/README.md)** (create the project, run SQL, GitHub OAuth App, env vars), then:
+Set `APP_URL`. For GitHub, create an OAuth App (callback `http://localhost:3000/api/github/callback`) **or** set `GITHUB_TOKEN`. If you use OAuth or a pasted PAT, also set `GITHUB_TOKEN_ENCRYPTION_KEY` (min 16 characters).
 
 ```bash
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) for the public home page.
-
-New accounts: home **Sign up** (or `/signup`) with name, email, and password → **company name** on `/onboarding` → `/dashboard`. Then **Add Project**, **Connect GitHub**, and choose a full-repo scan or specific files to monitor. Use **Forgot password** on `/login` if you cannot sign in.
-
-To empty the five tables while iterating, run `docs/supabase/03-reset.sql` in the Supabase SQL Editor.
-
-## Company model
-
-Customers are **companies**. Do not label them as tenants in product copy. Database foreign keys use `company_id`.
-
-```text
-Company → Users
-       → Projects → Scans
-                 → Findings
-```
-
-GitHub access tokens are encrypted on the company row and never returned to the browser.
+Open [http://localhost:3000](http://localhost:3000). **Scan a repository** goes to `/scan`. There is no account.
 
 ## What you get
 
 | Area | Status |
 |------|--------|
-| App shell | Sidebar, header, breadcrumbs, command menu (`⌘K`), company label |
-| Pages | Public home, Dashboard, Projects, Settings, public `/documentation`. Inventory, updates, findings, and scans open from a project. |
-| Auth | Supabase email/password, name on signup, forgot password, Settings → Account |
-| GitHub | Real OAuth + repository selection |
-| Scanning | Real discovery from version catalogs (`bom.yaml`, `versions.yaml`), package manifests, lockfiles (installed versions of declared deps), Dockerfiles, Gemfile.lock, composer.lock, and CycloneDX/SPDX SBOMs |
-| CVE / EOL | OSV + registries + GitHub Releases + endoflife.date; findings on the project |
-| Monitoring | Scheduled scans (within 24h by default), Slack/email alerts, What’s changed (upstream). Findings refresh from the latest scan. |
+| App shell | Sidebar, header, breadcrumbs |
+| Pages | Public home, Scan, Dashboard, Report, Settings, public `/documentation` |
+| Auth | None required. Leftover `/login` URLs redirect away |
+| GitHub | OAuth or PAT in a short-lived httpOnly cookie (not a database) |
+| Scanning | GitHub, CycloneDX/SPDX, or uploaded manifests — parsed in the request |
+| CVE / EOL | OSV + registries + GitHub Releases + endoflife.date |
+| Storage | Scan JSON in `sessionStorage`. Close the tab to discard it |
 
 ## Developer handoff
 
@@ -82,20 +64,19 @@ Also see [CONTRIBUTING.md](./CONTRIBUTING.md), the public **Documentation** site
 
 ```
 app/             Thin routes (metadata + re-exports) and /api handlers
-features/        Feature modules (page UI, hooks, feature data)
+features/        Feature modules (page UI, hooks, session scan store)
 components/
   ui/            Design-system primitives (Button, Dialog, Table, …)
   layout/        App shell: sidebar, header, command menu
   shared/        PageHeader, chips, table helpers
   feedback/      Empty, error, skeleton states
-config/          app.ts, navigation.ts, project-nav.ts
-lib/             Auth helpers, API client, utilities (no GitHub/OSV/Slack I/O)
-stores/          Global UI state (sidebar, layout, command menu, company context)
-server/          Supabase Auth and Postgres clients
-services/        Domain engines: api/, github/, scanner/, intelligence/, monitoring/
+config/          app.ts, navigation.ts
+lib/             API client, utilities (no GitHub/OSV I/O)
+stores/          Global UI state (sidebar, layout, command menu)
+services/        Domain engines: github/, scanner/, intelligence/, session-scan/
 scripts/         Nav validation and other repo tools
 docs/            Developer handoff
-proxy.ts         Session cookie auth gate (public pages skip Auth)
+proxy.ts         Public access (no login wall)
 ```
 
 See [AGENTS.md](./AGENTS.md) for conventions and how to add pages.
@@ -104,8 +85,9 @@ See [AGENTS.md](./AGENTS.md) for conventions and how to add pages.
 
 | Pattern | Where to look |
 |---------|----------------|
-| TanStack Query + API route | `features/dashboard/hooks/use-dashboard-stats.ts` |
-| Settings forms | `features/settings/components/account-settings-page.tsx` |
+| TanStack Query + API route | `features/scan-session/hooks/use-scan-session.ts` |
+| Session report store | `features/scan-session/stores/scan-session-store.ts` |
+| Settings | `features/settings/components/preferences-settings-page.tsx` |
 | Live UI catalog | `/documentation/ui` |
 | API client | `lib/api/client.ts` |
 

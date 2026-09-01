@@ -1,21 +1,17 @@
 # Developer Handoff
 
-**SecureStack** is patch and dependency update intelligence for companies. Phase 2 of the product TRD is live on the five-table model: **discover / compare / recommend**, **scheduled monitoring**, **impact + P1–P4**, **Slack/email alerts**, **SBOM upload**, and **trends**. The five tables are unchanged; extra fields live in `companies.monitoring`, `projects.monitoring`, and `scans.result_snapshot`.
+**SecureStack** is patch and dependency update intelligence you can self-host. Connect GitHub or upload a file. The product **discovers / compares / recommends** (current vs latest, what changed, P1–P4). **No accounts. No user database.** The report lives in this browser tab.
 
 ## What is ready vs placeholder
 
 | Ready to use | Later |
 |--------------|-------------|
-| App shell (sidebar, header, command menu) | GitLab/Bitbucket, BullMQ queue, Create PR / policy engine |
-| Supabase Auth (email + password) | |
-| Company onboarding + Settings → Company (interval, Slack webhook, email, digest) | |
-| Projects (create, list, detail, remove, environment) | |
-| GitHub OAuth + repository selection | Tokens never sent to the browser |
-| Repository scan + CycloneDX/SPDX SBOM upload | Stored on `scans.result_snapshot` |
+| App shell (sidebar, header) | GitLab/Bitbucket, Create PR / policy engine |
+| Public home + `/scan` with no signup | Optional persistence for scheduled monitoring |
+| GitHub OAuth or PAT in a session cookie | |
+| Repository scan + CycloneDX/SPDX + uploaded manifests | |
 | Latest version, GitHub release notes, OSV/CVE, EOL, findings | External APIs; 400 unique packages (infra/direct first), 80 manifests, 40 release-note lookups per scan |
-| Dashboard counts, trends, P1 mix, What’s changed alerts | Actionable updates only (infra + direct + security transitives). P1–P4 + Update urgently / Update / Review / Wait |
-| Scheduled scans | What’s changed is upstream current → latest. Scan-to-scan diff is on Scans → Since last scan. Findings refresh from the latest snapshot (status not stored yet) |
-| Inventory default view | Infra pins (`bom.yaml` / `versions.yaml`) and declared dependencies. Hides routine lockfile / node_modules helpers; Show toggle lists them. Updates groups those bumps by parent |
+| Dashboard, inventory, updates, findings from the in-tab report | Report is the inventory list in the sidebar; updates/findings routes remain |
 
 ## Quick start
 
@@ -24,20 +20,12 @@ pnpm install
 cp .env.example .env.local
 ```
 
-Then follow **[docs/supabase/README.md](./supabase/README.md)** in order:
+1. Set `APP_URL=http://localhost:3000`
+2. Create a GitHub OAuth App (callback `http://localhost:3000/api/github/callback`) **or** set `GITHUB_TOKEN`
+3. If you use OAuth or a pasted PAT, set `GITHUB_TOKEN_ENCRYPTION_KEY` (16+ characters)
+4. `pnpm dev`
 
-1. Create a Supabase project
-2. Copy URL + publishable key + service role key
-3. Disable email confirmation for local signup
-4. Run `01-schema.sql` then `02-rls.sql` in the SQL Editor
-5. If those files were already applied before Phase 4, also run `04-phase4.sql`
-6. Create a GitHub OAuth App (callback `http://localhost:3000/api/github/callback`)
-7. Fill GitHub + encryption env vars. For production cron, set `CRON_SECRET` (16+ characters).
-8. `pnpm dev`
-
-New accounts: public home `/` (or `/signup`) with name, email, and password → `/onboarding` (company name) → `/dashboard`. Header **Sign in** goes to `/login`. Use **Forgot password** if you cannot sign in.
-
-To wipe tables while iterating, run `docs/supabase/03-reset.sql`.
+Open `/`, then **Scan a repository**. You do not need Supabase.
 
 Run all checks before pushing:
 
@@ -45,36 +33,30 @@ Run all checks before pushing:
 pnpm check
 ```
 
-## Data model
+## Data model (this mode)
 
-Five application tables in Supabase PostgreSQL:
+Nothing is written to Postgres for a session scan.
 
 ```text
-companies → users
-companies → projects → scans
-                 └── findings
+GitHub cookie (optional, ~1 hour) + sessionStorage report
 ```
 
-`users.id` matches `auth.users.id`. GitHub tokens are encrypted on `companies.github_connection` (hidden from the authenticated role).
+Leftover company tables and Auth routes remain in the repo from an earlier SaaS path. The UI does not use them.
 
 ## Project layout
 
 ```
 app/              Thin routes (metadata + re-export feature pages)
   documentation/  Public docs site (no dashboard shell)
-  onboarding/     Authenticated company setup
-features/         Feature modules — page UI, hooks, feature UI
-services/api/     Company-scoped DB orchestration (auth, company, projects, scans)
-services/github/  GitHub OAuth + REST
+features/         Feature modules — page UI, hooks, session scan store
+services/github/  GitHub OAuth and REST. Tokens never sent to the browser
 services/scanner/ Manifest parse, repository walk
 services/intelligence/  OSV, EOL, versions, P1–P4
-services/monitoring/   Schedule, Slack/email
-server/supabase/  Auth/admin clients
+services/session-scan/  Stateless GitHub / SBOM / file scans
 components/       Shared shell + design system
-config/           app.ts, navigation.ts, project-nav.ts
-lib/              Utilities, API client, auth helpers (no GitHub/OSV/Slack I/O)
-stores/           Global UI state (+ company-context-store)
-docs/supabase/    SQL you paste into the Supabase SQL Editor
+config/           app.ts, navigation.ts
+lib/              Utilities, API client
+stores/           Global UI chrome
 ```
 
 ## Feature module template
@@ -84,73 +66,35 @@ features/<name>/
   index.ts                 # Public exports only
   components/
     <name>-page.tsx        # Page component
-  data/                    # Optional mock/static data
-  hooks/                   # Optional TanStack Query hooks
-  types/                   # Optional feature types
 ```
 
 **Reference implementations:**
 
-- `features/onboarding/` — company name after signup
-- `features/projects/` — create project, GitHub OAuth, one repository per project, full-repo or selected-file scan scope, Start Scan, Overview / Inventory / Scans. Package detail is `/projects/:id/inventory/:name`. Sidebar Projects appears after the first project. Two or more projects nest under sidebar Projects.
-- `features/scans/` — scan APIs/hooks
-- `features/inventory/` — component list used on the project
-- `features/updates/` — outdated packages vs latest release
-- `features/findings/` — security / update / EOL findings
-- `features/dashboard/` — greeting uses first name; empty company shows Add Project empty state. With projects, KPIs are project count plus open findings. Lists Recent findings, Updates, and Recent scans. Issue/severity/status chips use `config/issue-palette.ts`.
-- `features/settings/` — account, company, preferences
+- `features/scan-session/` — `/scan`, GitHub session, `POST /api/session/scan`, sessionStorage store
+- `features/dashboard/` — empty until a scan; KPIs from the in-tab report
+- `features/inventory/` — Report (`/inventory`); package detail `/inventory/:name`
+- `features/updates/` — outdated packages (not in the sidebar)
+- `features/findings/` — security / update / EOL findings (not in the sidebar)
+- `features/settings/` — preferences (`/settings/preferences`)
 
 ## Adding a page
 
 1. Create `features/<name>/components/<name>-page.tsx`
 2. Export from `features/<name>/index.ts`
 3. Add `app/(dashboard)/<name>/page.tsx` with `metadata` + default export
-4. Register `href` in `config/navigation.ts` (unless intentionally settings-only)
+4. Register `href` in `config/navigation.ts`
 5. Run `pnpm validate:nav`
 
-## Patterns to copy
+## Session APIs
 
-### Data fetching (TanStack Query)
-
-- Hook: `features/dashboard/hooks/use-dashboard-stats.ts`
-- API route: `app/api/dashboard/stats/route.ts`
-- Client: `lib/api/client.ts` (`apiGet`, `apiPost`, `apiPatch`, `apiDelete`, `ApiError`)
-
-### Company APIs
-
-- Context: `GET /api/company/context`
-- Onboarding: `GET/POST /api/onboarding`
-- Company: `GET/PATCH /api/company`
-- Projects: `GET/POST /api/projects`, `GET/PATCH/DELETE /api/projects/:id`. A project with no repository, or with a repository but no scan scope yet, reopens `/projects/:id/connect`. After setup, `/projects/:id` redirects to `/projects/:id/overview`.
-- GitHub: `GET /api/github/connect`, `GET /api/github/callback`, `GET /api/github/repositories`, `GET /api/github/repository-files`
-- Scans: `POST/GET /api/projects/:id/scans`, `POST /api/projects/:id/sbom`, `GET /api/scans`, `GET /api/scans/:id`, `GET /api/projects/:id/components`
-- Scheduled scans: `POST /api/scans/scheduled` (this company), `GET/POST /api/cron/scans` (`CRON_SECRET`)
-- Inventory: `GET /api/inventory` (`offset` / `limit`, `outdated=1`, `transitive=1`)
-- Project components: `GET /api/projects/:id/components` (paginated default view; `transitive=1` includes lockfile noise; `name` looks up one package; coverage, available updates, scan-to-scan diff)
-- Findings: `GET /api/findings`, `GET /api/projects/:id/findings` (from the latest scan snapshot). `PATCH /api/findings/:id` is `501` until status is stored.
-
-### Settings forms
-
-- Settings forms: `features/settings/components/account-settings-page.tsx`, `company-settings-page.tsx`
+- GitHub: `GET/POST/DELETE /api/session/github`, `GET /api/session/github/files`, `GET /api/github/callback`
+- Scan: `POST /api/session/scan` (`source: github | sbom | files`; GitHub `repositories` + optional selected `files`)
 
 ## Auth
 
-| File | Purpose |
-|------|---------|
-| `server/supabase/*` | Cookie session + service-role client |
-| `proxy.ts` | Edge gate: skip Auth on public/anonymous requests; `getClaims()` on protected session cookies |
-| `app/api/auth/*` | Login / signup / logout / me / forgot-password / reset-password |
-| `app/api/account` | Signed-in name + password update |
-| `services/api/auth.ts` | Profile lookup + post-auth redirect |
-| `features/auth/stores/user-store.ts` | Client user state (hydrated via `/api/auth/me`) |
-
-- Signup, login, and forgot-password are IP rate-limited; signup and reset emails avoid email enumeration.
-- Login and signup must not abort Auth fetches. Public pages stay fast by skipping Auth lookup, not by timing out `signInWithPassword`.
-- Signup collects name, email, and password (at least 8 characters).
-- Set `AUTH_DEV_BYPASS=true` in `.env.local` to skip the login wall during UI work. Leave it `false` to test login/logout (bypass keeps `/dashboard` reachable without a session).
+There is no login wall. `proxy.ts` allows app routes. `/login`, `/signup`, and `/onboarding` redirect to the dashboard.
 
 ## After handoff
 
-1. The TRD MVP (phases 1–4) is in this repository
-2. Keep docs in sync using `docs/DOC_MAP.md`
-  3. Keep extra Phase 2+ fields in JSON (`companies.monitoring`, `projects.monitoring` including scan scope, `scans.result_snapshot`) — do not add a sixth table unless volume requires it
+1. Keep docs in sync using `docs/DOC_MAP.md`
+2. Do not add a user table unless persistence becomes an explicit product choice

@@ -1,39 +1,38 @@
-export const HOME_TITLE = "Know what changed before you update.";
+export const HOME_TITLE = "Know what to update. We keep none of your data.";
 
 export const HOME_DESCRIPTION =
-  "SecureStack watches the open-source dependencies a company actually uses. When a new version lands, it shows what changed, whether it is a security fix, and whether you should update.";
+  "SecureStack reads a GitHub repository or a file you upload, then shows current vs latest, what changed, and whether you should update. There is no signup and no database of your projects.";
 
 export const HOME_CTA = {
-  primary: "Sign up",
+  primary: "Scan a repository",
   secondary: "See how it works",
   secondaryHref: "/#how-it-works",
-  signupHref: "/#signup",
+  signupHref: "/scan",
 } as const;
 
 export const HOME_NAV = [
   { name: "How it works", href: "/#how-it-works" },
-  { name: "Features", href: "/#features" },
   { name: "FAQ", href: "/#faq" },
 ] as const;
 
 export const HOME_HERO = {
   id: "hero",
-  eyebrow: "Patch / dependency update intelligence",
+  eyebrow: "Open-source patch intelligence",
   title: HOME_TITLE,
   body: HOME_DESCRIPTION,
   support:
-    "One dashboard for available updates, what changed, security impact, and a recommended action.",
-  trust: "Built for companies. Connect GitHub and see what to fix first.",
+    "Connect GitHub or drop an SBOM (Software Bill of Materials). The report stays in this browser tab.",
+  trust: "Self-host it. No accounts. GitHub tokens are not written to a database.",
 } as const;
 
 export const HOME_PROBLEM = {
   id: "why",
   title: "You already run other people's code. You need to know if it is safe.",
-  body: "Every application depends on open-source libraries. Versions drift, CVEs land, and packages go end-of-life. Spreadsheets and one-off scans do not give security and engineering a shared view.",
+  body: "Every application depends on open-source libraries. Versions drift, CVEs land, and packages go end-of-life. You should not have to create an account for a one-shot report.",
   points: [
     {
       title: "Know what you ship",
-      body: "Discover the open-source components and pinned binaries in a GitHub repository, including the version you actually use.",
+      body: "Discover the open-source components and pinned binaries in a GitHub repository or an SBOM, including the version you actually use.",
     },
     {
       title: "Catch CVEs and EOL early",
@@ -52,34 +51,30 @@ export const HOME_HOW_IT_WORKS = {
   steps: [
     {
       number: "01",
-      title: "Connect GitHub",
-      body: "Create a project and authorize GitHub. Select the repository SecureStack should read.",
-      visual: "GitHub → SecureStack",
+      title: "Connect GitHub or drop a file",
+      body: "Authorize GitHub for this session, or upload CycloneDX/SPDX JSON or manifests. Tokens are held in a short-lived cookie, never a user table.",
     },
     {
       number: "02",
       title: "Compare current to latest",
       body: "We identify the version you run, fetch the latest upstream release, and pull GitHub release notes when they exist.",
-      visual: "Current → Latest → Release notes",
     },
     {
       number: "03",
       title: "See what changed, then decide",
-      body: "Compare current vs latest, read the release changes, and get Update urgently, Update, Review, or Wait. Inventory is discovery — this is the product.",
-      visual: "Current → New → What changed → Recommend",
+      body: "Compare current vs latest, read the release changes, and get Update urgently, Update, Review, or Wait. Close the tab and the report is gone.",
     },
   ],
-  footer: "GitHub connection, scanning, findings, and scheduled monitoring are live.",
 } as const;
 
 export const HOME_FEATURES = {
   id: "features",
   title: "Discover. Compare. Recommend.",
-  body: "SecureStack is built so security and engineering share one picture of open-source health instead of separate trackers.",
+  body: "SecureStack is built so you get a single picture of open-source health without handing over an account.",
   points: [
     {
       title: "Component inventory",
-      body: "Discover every open-source component from GitHub, with the version your company actually runs.",
+      body: "Discover every open-source component from GitHub or an uploaded SBOM, with the version you actually run.",
     },
     {
       title: "CVE, EOL, and drift",
@@ -92,57 +87,47 @@ export const HOME_FEATURES = {
   ],
 } as const;
 
-export const HOME_FAQ_HEADING = "Questions teams ask before they connect a repository.";
+export const HOME_FAQ_HEADING = "Questions before you connect a repository.";
 
 export const HOME_FAQS = [
   {
     question: "What does SecureStack do?",
     answer:
-      "It is patch and dependency update intelligence. You connect GitHub, then see current vs latest, what changed, security impact, and whether to update.",
+      "It is patch and dependency update intelligence. You connect GitHub or upload a file, then see current vs latest, what changed, security impact, and whether to update.",
   },
   {
-    question: "Who is a company?",
+    question: "Do I need an account?",
     answer:
-      "Every customer account is a company. Projects, repositories, scans, and findings all belong to that company.",
+      "No. There is no signup, no company record, and no user database in this mode.",
   },
   {
-    question: "What do I need to sign up?",
+    question: "Do you store my GitHub token or inventory?",
     answer:
-      "Name, email, and password. After you sign up you name your company, then land on the dashboard.",
+      "No. A GitHub token is kept in an httpOnly cookie for this session so the server can read the repo, then it expires. Scan results live in your browser tab (sessionStorage). Close the tab and they are gone.",
   },
   {
-    question: "Do I have to finish extra setup after signup?",
-    answer: "Yes — enter your company name once. Then you can add projects and connect GitHub.",
-  },
-  {
-    question: "Can I sign in if I already have an account?",
+    question: "Can I run this myself?",
     answer:
-      "Yes. Use Sign in in the header. If you forgot your password, use Forgot password on the sign-in page.",
+      "Yes. Clone the repo, set GitHub OAuth or GITHUB_TOKEN, and run pnpm dev. You do not need Supabase.",
   },
   {
-    question: "What if my email is invalid?",
+    question: "Is GitHub scanning live?",
     answer:
-      "Signup checks the email field before creating an account. You will see an error on that field until the address is valid.",
-  },
-  {
-    question: "Is GitHub scanning live yet?",
-    answer:
-      "Yes. Connect GitHub, start a scan, and SecureStack lists dependencies and pinned binaries, compares latest versions, pulls GitHub release notes, flags CVEs via OSV, and recommends Update urgently, Update, Review, or Wait.",
+      "Yes. Connect GitHub or upload files. SecureStack lists dependencies and pinned binaries, compares latest versions, pulls GitHub release notes, flags CVEs via OSV, and recommends Update urgently, Update, Review, or Wait.",
   },
   {
     question: "Where is documentation?",
-    answer:
-      "Public product and UI documentation lives at /documentation. It does not require a session.",
+    answer: "Public product and UI documentation lives at /documentation.",
   },
 ] as const;
 
 export const HOME_SIGNUP = {
-  id: "signup",
-  title: "Create your account",
-  body: "Name, email, and password. Then you name your company and go to the dashboard.",
+  id: "scan",
+  title: "Scan without an account",
+  body: "Connect GitHub or upload an SBOM. The report is not saved on our servers.",
 } as const;
 
 export const HOME_FOOTER = {
-  blurb: "Patch and dependency update intelligence.",
+  blurb: "Patch and dependency update intelligence. No accounts. No stored user data.",
   copyright: "© 2026 SecureStack",
 } as const;

@@ -1,26 +1,18 @@
 ---
-title: Company label
-description: How the sidebar shows the current company.
-lastUpdated: 2026-08-29
+title: Session label
+description: How the sidebar shows the product brand.
+lastUpdated: 2026-09-01
 related:
   - href: /documentation/architecture/tenancy
-    title: Company & GitHub
-    description: Company isolation and GitHub token storage.
+    title: Self-host architecture
+    description: No company records.
   - href: /documentation/layout/sidebar
     title: Sidebar
-    description: Config-driven navigation below the company label.
+    description: Config-driven navigation below the brand.
 ---
 
-The sidebar header shows the **company name**. Phase 1 is one company per user, so there is no switcher dropdown.
+The sidebar header always shows **SecureStack**. It does not switch to the repository full name after a scan.
 
-Company data comes from `GET /api/company/context` into `stores/company-context-store.ts`.
+The session caption (**This browser session** / **No data stored**) is commented out in `TeamSwitcher` so it can be restored later.
 
-| Route | Purpose |
-| --- | --- |
-| `/settings/account` | Your name, email, and update password |
-| `/settings/company` | Edit company name, scan interval, and alerts |
-| `/projects` | List projects. Hidden from the sidebar until the first project exists. With two or more, names also nest under sidebar Projects. |
-| `/projects/new` | Create a project, then connect GitHub |
-| `/projects/:id/overview` | Repository, files to monitor, and scan status |
-| `/projects/:id/inventory` | Components in that project |
-| `/projects/:id/inventory/:name` | Current → new, what changed, and findings for one package |
+There is no company switcher. Theme and layout live under **Settings** (`/settings/preferences`).

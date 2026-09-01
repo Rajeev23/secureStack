@@ -1,34 +1,31 @@
 ---
 title: Findings & intelligence
 description: After a scan, SecureStack checks latest versions, GitHub release notes, OSV/NVD CVE aliases, and end-of-life status, then shows findings from that snapshot.
-lastUpdated: 2026-08-29
+lastUpdated: 2026-09-01
 related:
   - href: /documentation/scanning
     title: Scanning & inventory
     description: GitHub repository reads and dependency parsing.
-  - href: /documentation/monitoring
-    title: Scheduled monitoring
-    description: Cron scans, What’s changed, and finding status.
   - href: /documentation/architecture/tenancy
-    title: Company & GitHub
-    description: Tokens stay on the company row.
+    title: Self-host architecture
+    description: Tokens stay in a session cookie.
 ---
 
 A scan turns inventory into an action: **a new version exists, these are the changes, this is the security impact, and this is what we recommend.**
 
 ```text
-Start Scan
+Scan
   → Parse dependencies and version catalogs
   → Latest version (package registries + GitHub Releases)
   → Release notes / changelog
   → OSV (CVE aliases include NVD)
   → EOL (endoflife.date)
   → Recommendation (Update urgently / Update / Review / Wait)
-  → Impact + P1–P4 (environment, security, breaking, age of fix)
-  → Project page (`/projects/:id/overview`, Inventory, Scans)
+  → Impact + P1–P4
+  → Dashboard / Report / `/inventory/:name`
 ```
 
-No extra SQL. Findings are derived from the latest `scans.result_snapshot` when you open the page. They are not inserted into the `findings` table. Status (ignored / accepted risk) is not stored yet. Release intelligence lives on `scans.result_snapshot.components`. Intelligence is fetched live from external APIs; SecureStack does not store a global CVE database.
+No database write. Findings are derived from the scan JSON in this browser tab. Status (ignored / accepted risk) is not stored. Intelligence is fetched live from external APIs; SecureStack does not store a global CVE database.
 
 ## Sources
 

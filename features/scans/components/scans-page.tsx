@@ -2,63 +2,53 @@
 
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { ErrorState } from "@/components/feedback/ErrorState";
 import { PageHeader } from "@/components/shared/page-header";
 import { ScanStatusChip } from "@/components/shared/issue-chip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCompanyScans } from "@/features/scans/hooks/use-scans";
-import { projectScansHref } from "@/features/projects/model";
+import { Button } from "@/components/ui/button";
+import { useHydratedScanSession } from "@/features/scan-session/hooks/use-hydrated-scan-session";
 import { scanSourceLabel } from "@/lib/scan-source";
 
 export function ScansPage() {
-  const { data, isLoading, isError, refetch } = useCompanyScans();
+  const { scan, hydrated } = useHydratedScanSession();
 
   return (
     <div className="dashboard-page space-y-6">
       <PageHeader
         title="Scans"
-        description="Manual and scheduled scans across this company’s projects."
+        description="This browser session holds one scan. Nothing is stored on a server."
+        actions={
+          <Button render={<Link href="/scan" />} variant="outline" size="sm">
+            New scan
+          </Button>
+        }
       />
 
-      {isLoading ? (
+      {!hydrated ? (
         <div className="space-y-2">
           <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-16 w-full" />
         </div>
-      ) : isError ? (
-        <ErrorState
-          title="Unable to load scans"
-          description="Check your session and try again."
-          onRetry={() => {
-            void refetch();
-          }}
-        />
-      ) : data?.length ? (
+      ) : scan ? (
         <ul className="divide-y rounded-xl border bg-card">
-          {data.map((scan) => (
-            <li key={scan.id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-4 text-sm">
-              <div>
-                <Link href={projectScansHref(scan.projectId)} className="font-medium hover:text-primary">
-                  {scan.projectName}
-                </Link>
-                <p className="text-muted-foreground">
-                  {scanSourceLabel(scan.source)} ·{" "}
-                  {scan.completedAt
-                    ? formatDistanceToNow(new Date(scan.completedAt), { addSuffix: true })
-                    : formatDistanceToNow(new Date(scan.createdAt), { addSuffix: true })}
-                  {scan.status === "completed" ? ` · ${scan.findingsFound} findings` : null}
-                  {scan.error ? ` · ${scan.error}` : null}
-                </p>
-              </div>
-              <ScanStatusChip status={scan.status} />
-            </li>
-          ))}
+          <li className="flex flex-wrap items-center justify-between gap-2 px-5 py-4 text-sm">
+            <div>
+              <p className="font-medium">{scan.label}</p>
+              <p className="text-muted-foreground">
+                {scanSourceLabel(scan.source)} · {scan.findingsFound} findings ·{" "}
+                {formatDistanceToNow(new Date(scan.scannedAt), { addSuffix: true })}
+              </p>
+            </div>
+            <ScanStatusChip status="completed" />
+          </li>
         </ul>
       ) : (
         <div className="rounded-xl border border-dashed bg-card px-6 py-12 text-center">
-          <p className="font-medium">No scans yet</p>
+          <p className="font-medium">No scan in this tab</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Open a project and start a scan, or run due projects from Company settings.
+            <Link href="/scan" className="text-primary hover:underline">
+              Scan GitHub or upload a file
+            </Link>
+            .
           </p>
         </div>
       )}

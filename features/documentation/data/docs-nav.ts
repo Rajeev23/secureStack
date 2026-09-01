@@ -33,12 +33,12 @@ export const docsNavigation: DocsNavGroup[] = [
         file: "boilerplate-patterns.md",
       },
       {
-        title: "Company & GitHub",
+        title: "Self-host architecture",
         href: "/documentation/architecture/tenancy",
         file: "architecture/tenancy.md",
       },
       {
-        title: "Onboarding",
+        title: "Scan flow",
         href: "/documentation/onboarding",
         file: "onboarding.md",
       },
@@ -94,7 +94,7 @@ export const docsNavigation: DocsNavGroup[] = [
     items: [
       { title: "Sidebar", href: "/documentation/layout/sidebar", file: "layout/sidebar.md" },
       {
-        title: "Context switcher",
+        title: "Session label",
         href: "/documentation/layout/workspaces",
         file: "layout/workspaces.md",
       },

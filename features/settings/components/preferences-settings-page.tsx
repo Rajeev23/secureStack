@@ -10,7 +10,7 @@ export function PreferencesSettingsPage() {
   return (
     <div className="dashboard-page">
       <PageHeader
-        title="Preferences"
+        title="Settings"
         description="Layout and color mode for this device."
       />
 

@@ -1,109 +1,98 @@
 ---
 title: Overview
-description: SecureStack is patch and dependency update intelligence. This guide covers the current foundation and what comes next.
-lastUpdated: 2026-08-28
+description: SecureStack is patch and dependency update intelligence. Scan GitHub or a file. No accounts. Nothing stored.
+lastUpdated: 2026-09-01
 related:
   - href: /documentation/boilerplate-patterns
     title: Project patterns
     description: Follow the project structure when you add a product feature.
   - href: /documentation/architecture/tenancy
-    title: Company & GitHub
-    description: Choose the simple account model or the full hierarchy.
+    title: Self-host architecture
+    description: Session scans with no user database.
   - href: /documentation/onboarding
-    title: Onboarding
-    description: Understand the signup-to-dashboard sequence in both tenancy modes.
+    title: Scan flow
+    description: Connect GitHub or upload a file, then read the report.
   - href: /documentation/scanning
     title: Scanning & inventory
     description: Read GitHub and list real dependencies.
   - href: /documentation/intelligence
     title: Findings & intelligence
     description: CVEs, latest versions, EOL, and upgrade recommendations.
-  - href: /documentation/monitoring
-    title: Scheduled monitoring
-    description: Cron scans, What’s changed, and finding status.
   - href: /documentation/ui
     title: UI components
     description: Browse live examples of the shared design-system components.
 ---
 
-**SecureStack** is **patch and dependency update intelligence**. A company connects GitHub repositories. The product discovers open-source components, tracks current and latest versions, explains what changed, flags CVEs and EOL software, and recommends whether to update. Inventory is discovery — not the whole product.
+**SecureStack** is **patch and dependency update intelligence**. You connect a GitHub repository or upload a file. The product discovers open-source components, tracks current and latest versions, explains what changed, flags CVEs and EOL software, and recommends whether to update.
 
-This repository includes the public home page, application shell, **Supabase Auth**, **company** accounts, **projects**, **real GitHub connection**, **repository scanning**, **SBOM upload**, **findings (CVE / latest version / release notes / EOL / P1–P4)**, **scheduled monitoring with Slack/email**, and public documentation.
+This mode has **no signup**, **no company records**, and **no database of your scan**. Results stay in the browser tab. A GitHub token, if you connect one, is held in a short-lived httpOnly cookie so the server can read the repo — it is not written to Postgres.
 
-## Product flow (target)
+## Product flow
 
-1. Connect a **Git repository** or upload an **SBOM**.
-2. Discover all open-source components in use.
-3. Identify the **current version** of each component.
-4. Track **latest versions and releases**.
+1. Open `/` or `/scan`.
+2. Connect **GitHub** (OAuth or a personal access token) **or** upload an **SBOM** / manifests.
+3. Discover open-source components in use.
+4. Compare **current vs latest**, including release notes when they exist.
 5. Detect **CVEs, security vulnerabilities, and EOL software**.
-6. Explain **what changed** between the company's version and the latest.
-7. Identify **breaking changes and upgrade risks**.
-8. Prioritize **which patches should be applied first**.
-9. Show security and engineering teams a **single view of open-source software health**.
+6. Get **Update urgently / Update / Review / Wait**.
+7. Close the tab — the report is gone.
 
 ## What is included today
 
 | Area | Ready to reuse |
 | --- | --- |
-| Application shell | Responsive sidebar, header, breadcrumbs, command menu, notifications, and light/dark theme |
-| Public home | Marketing page at `/` with Sign in in the header and Sign up (name, email, password) |
-| Authentication | Supabase Auth email/password; name on signup; company name on `/onboarding`; forgot password; Settings → Account |
-| Company | One company per signup; projects and GitHub connection belong to that company |
+| Application shell | Responsive sidebar, header, breadcrumbs, and light/dark theme |
+| Public home | Marketing page at `/` with Scan a repository (no Sign in / Sign up) |
+| Session scan | `POST /api/session/scan` — GitHub, CycloneDX/SPDX, or uploaded manifests |
+| GitHub | OAuth or PAT in an encrypted session cookie. Optional `GITHUB_TOKEN` env on the server |
 | Feature structure | Thin App Router routes backed by self-contained modules under `features/` |
-| Data UI | Shared table primitive, forms, feedback states, and live component examples |
 | Developer workflow | Type checking, tests, navigation validation, production builds, CI, and synchronized documentation |
 
-Dashboard metrics come from the latest completed scans and open findings. The sidebar is Dashboard and Settings until the first project exists; then Projects appears. With two or more projects, names nest under Projects. Inventory, updates, findings, and scans open on a project.
-
-## Account language
-
-Every customer is a **company**. Do not use tenant in product copy. Projects, scans, and findings are scoped by `company_id`.
+Dashboard and Report (`/inventory`) read the last scan from `sessionStorage`. Nothing is inserted into `companies`, `users`, `projects`, `scans`, or `findings`.
 
 ## Why the structure matters
 
-The repository separates routing, product features, server-side domain logic, and shared UI. That keeps route files small and makes it clear where new work belongs:
+The repository separates routing, product features, server-side domain logic, and shared UI:
 
 ```text
 app/          routes, layouts, loading, and API handlers
-features/     product pages, feature UI, hooks, and example data
-services/     GitHub, scanner, intelligence, monitoring, and company DB workflows
+features/     product pages, feature UI, hooks, and session stores
+services/     GitHub, scanner, intelligence, and session-scan (no DB)
 components/   shared layout, feedback, and design-system components
 config/       application and navigation configuration
 lib/          reusable utilities and client helpers
-stores/       global UI and company-context state
-server/       Supabase clients (Auth + Postgres)
+stores/       global UI chrome state
 ```
 
-Start with [Project patterns](/documentation/boilerplate-patterns) before adding a feature. It explains the route → feature → navigation flow and points to reference implementations already in the repository.
+Start with [Project patterns](/documentation/boilerplate-patterns) before adding a feature.
 
-## Company accounts
-
-Accounts are companies. After signup, `/onboarding` collects the company name. Then add a project and connect GitHub. See [Company & GitHub](/documentation/architecture/tenancy) and [Onboarding](/documentation/onboarding).
-
-## Run it locally
+## Self-host
 
 ```bash
 pnpm install
 cp .env.example .env.local
+```
+
+Set `APP_URL`, GitHub OAuth **or** `GITHUB_TOKEN`, and `GITHUB_TOKEN_ENCRYPTION_KEY` if you use OAuth or a pasted PAT. You do **not** need Supabase for this flow.
+
+```bash
 pnpm dev
 ```
 
-pnpm 11 blocks dependency build scripts until they are listed in `pnpm-workspace.yaml` under `allowBuilds`. This repo already allows `esbuild`, `sharp`, and `unrs-resolver`.
+Open `http://localhost:3000`, then **Scan a repository**.
 
-Open `http://localhost:3000` for the public home page. Create an account with email and password, then name your company. Follow `docs/supabase/README.md` before signing up.
+pnpm 11 blocks dependency build scripts until they are listed in `pnpm-workspace.yaml` under `allowBuilds`. This repo already allows `esbuild`, `sharp`, and `unrs-resolver`.
 
 ## Recommended first steps
 
-1. Create a Supabase project and run the SQL in `docs/supabase/`.
-2. Create a GitHub OAuth App for repository access.
-3. Read [Project patterns](/documentation/boilerplate-patterns) before adding a feature.
-4. Skim [Scheduled monitoring](/documentation/monitoring) after the first scan.
-5. Browse [UI components](/documentation/ui) before creating a new primitive.
-6. Run `pnpm check` before pushing.
+1. Create a GitHub OAuth App (callback `http://localhost:3000/api/github/callback`) **or** export `GITHUB_TOKEN`.
+2. Read [Self-host architecture](/documentation/architecture/tenancy).
+3. Read [Scan flow](/documentation/onboarding).
+4. Browse [UI components](/documentation/ui) before creating a new primitive.
+5. Run `pnpm check` before pushing.
 
 ## Open source and community
 
-The project is licensed under **MIT**, so you can use, modify, and distribute it in personal or commercial work under the license terms. Contributions should preserve the architecture, include tests for behavior changes, and update the matching documentation in the same pull request.
+The project is licensed under **MIT**. Contributions should preserve the architecture, include tests for behavior changes, and update the matching documentation in the same pull request.
 
-See `CONTRIBUTING.md` for contribution expectations and `docs/HANDOFF.md` for the technical handoff. The public documentation you are reading lives at `/documentation` and describes this repository’s real implementation.
+See `CONTRIBUTING.md` and `docs/HANDOFF.md`. The public documentation you are reading lives at `/documentation`.

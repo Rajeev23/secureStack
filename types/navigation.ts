@@ -19,6 +19,11 @@ export type NavItem = {
    * routes like `/projects/:id/inventory`. Defaults to exact match.
    */
   match?: "exact" | "prefix";
+  /**
+   * When `false`, hide this item from the sidebar and the public home chrome.
+   * Omitted or `true` means visible.
+   */
+  visible?: boolean;
 };
 
 export type NavGroup = {

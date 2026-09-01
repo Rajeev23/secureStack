@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
-import { FolderKanban, Plus } from "lucide-react";
+import { ScanSearch } from "lucide-react";
 import { EmptyState } from "@/components/feedback/empty-state";
 import {
   ChangeKindChip,
@@ -18,32 +17,27 @@ import { DashboardFeedRow } from "@/features/dashboard/components/dashboard-feed
 import { DashboardGreeting } from "@/features/dashboard/components/dashboard-greeting";
 import { DashboardPanel } from "@/features/dashboard/components/dashboard-panel";
 import { DashboardStatsGrid } from "@/features/dashboard/components/dashboard-stats-grid";
-import { useDashboardOverview } from "@/features/dashboard/hooks/use-dashboard-stats";
-import {
-  projectInventoryItemHref,
-  projectOverviewHref,
-  projectScansHref,
-} from "@/features/projects/model";
-import { SCAN_STATUS_PALETTE, lookupPalette } from "@/config/issue-palette";
+import { dashboardFromSession, sessionInventoryHref } from "@/features/scan-session/lib/derive";
+import { useHydratedScanSession } from "@/features/scan-session/hooks/use-hydrated-scan-session";
 import { scanSourceLabel } from "@/lib/scan-source";
+import { formatDistanceToNow } from "date-fns";
 
-function AddProjectButton() {
+function ScanButton({ label = "Scan a repository" }: { label?: string }) {
   return (
-    <Button render={<Link href="/projects/new" />}>
-      <Plus className="size-4" aria-hidden />
-      Add Project
+    <Button render={<Link href="/scan" />}>
+      <ScanSearch className="size-4" aria-hidden />
+      {label}
     </Button>
   );
 }
 
 export function DashboardPage() {
-  const { data, isLoading } = useDashboardOverview();
-  const recentUpdates = (data?.updates ?? []).slice(0, 8);
-  const trends = data?.trends ?? [];
-  const priority = data?.priority ?? { P1: 0, P2: 0, P3: 0, P4: 0 };
-  const maxTrend = Math.max(1, ...trends.map((point) => point.findingsFound));
+  const { scan, hydrated } = useHydratedScanSession();
+  const data = dashboardFromSession(scan);
+  const recentUpdates = data.updates.slice(0, 8);
+  const priority = data.priority ?? { P1: 0, P2: 0, P3: 0, P4: 0 };
 
-  if (isLoading) {
+  if (!hydrated) {
     return (
       <div className="dashboard-page animate-fade-in gap-4">
         <DashboardGreeting />
@@ -56,15 +50,15 @@ export function DashboardPage() {
     );
   }
 
-  if (!data?.projects.length) {
+  if (!scan) {
     return (
       <div className="dashboard-page animate-fade-in gap-4">
         <DashboardGreeting />
         <EmptyState
-          icon={FolderKanban}
-          title="Add your first project"
-          description="Connect a GitHub repository so SecureStack can watch open-source versions, explain what changed, and recommend updates."
-          action={<AddProjectButton />}
+          icon={ScanSearch}
+          title="Scan to see what to update"
+          description="Connect GitHub or upload an SBOM / manifest. The report stays in this tab. We do not create accounts or store your data."
+          action={<ScanButton />}
           className="min-h-80 bg-card"
         />
       </div>
@@ -75,40 +69,15 @@ export function DashboardPage() {
     <div className="dashboard-page animate-fade-in gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <DashboardGreeting />
-        <AddProjectButton />
+        <ScanButton label="New scan" />
       </div>
 
       <section className="space-y-3">
-        <DashboardStatsGrid />
+        <DashboardStatsGrid stats={data.stats} />
       </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <DashboardPanel
-          title="Open updates over time"
-          description="Findings counted on each completed scan. New upstream releases appear after the scheduled scan (within 24 hours by default)."
-        >
-          {trends.length ? (
-            <ol className="space-y-2">
-              {trends.map((point) => (
-                <li key={`${point.at}:${point.projectName}`} className="space-y-1">
-                  <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                    <span className="truncate">{point.projectName}</span>
-                    <span className="tabular-nums">{point.findingsFound}</span>
-                  </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-primary"
-                      style={{ width: `${Math.max(8, (point.findingsFound / maxTrend) * 100)}%` }}
-                    />
-                  </div>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <p className="text-sm text-muted-foreground">Scan a project to start the trend line.</p>
-          )}
-        </DashboardPanel>
-        <DashboardPanel title="Priority mix" description="P1 is production security or overdue fixes. Hover a P1 chip on Updates for why.">
+        <DashboardPanel title="Priority mix" description="P1 is production security or overdue fixes.">
           <ul className="grid grid-cols-4 gap-2 text-center text-sm">
             {(["P1", "P2", "P3", "P4"] as const).map((key) => (
               <li key={key} className="rounded-lg border bg-muted/30 px-2 py-3">
@@ -118,15 +87,35 @@ export function DashboardPage() {
             ))}
           </ul>
         </DashboardPanel>
+        <DashboardPanel title="This scan" description="Results live in this browser tab until you close it or start a new scan.">
+          <ul className="space-y-2 text-sm">
+            <li className="flex justify-between gap-2">
+              <span className="text-muted-foreground">Source</span>
+              <span>{scanSourceLabel(scan.source)}</span>
+            </li>
+            <li className="flex justify-between gap-2">
+              <span className="text-muted-foreground">Target</span>
+              <span className="truncate font-medium">{scan.label}</span>
+            </li>
+            <li className="flex justify-between gap-2">
+              <span className="text-muted-foreground">Packages</span>
+              <span className="tabular-nums">{scan.componentsFound}</span>
+            </li>
+            <li className="flex justify-between gap-2">
+              <span className="text-muted-foreground">Findings</span>
+              <span className="tabular-nums">{scan.findingsFound}</span>
+            </li>
+          </ul>
+        </DashboardPanel>
       </div>
 
       {data.changes.length ? (
-        <DashboardPanel title="What’s changed alerts" description="Security and lifecycle alerts from the latest scans.">
+        <DashboardPanel title="What’s changed" description="Security and lifecycle alerts from this scan.">
           <ul className="divide-y">
             {data.changes.map((alert, index) => (
               <DashboardFeedRow
-                key={`${alert.projectId}:${alert.summary}:${index}`}
-                href={projectOverviewHref(alert.projectId)}
+                key={`${alert.summary}:${index}`}
+                href="/inventory"
                 title={alert.summary}
                 subtitle={alert.projectName}
                 chips={
@@ -141,18 +130,15 @@ export function DashboardPage() {
         </DashboardPanel>
       ) : null}
 
-      <DashboardPanel
-        title="Recent updates"
-        description="New upstream versions with a recommended action. Open a project for what changed."
-      >
+      <DashboardPanel title="Recent updates" description="New upstream versions with a recommended action.">
         {recentUpdates.length ? (
           <ul className="divide-y">
             {recentUpdates.map((item) => (
               <DashboardFeedRow
-                key={`${item.projectId}:${item.ecosystem}:${item.name}:${item.sourceFile}`}
-                href={projectInventoryItemHref(item.projectId, item.name)}
+                key={`${item.ecosystem}:${item.name}:${item.sourceFile}`}
+                href={sessionInventoryHref(item.name)}
                 title={item.name}
-                subtitle={`${item.version}${item.latestVersion ? ` → ${item.latestVersion}` : ""} · ${item.projectName}${item.priority ? ` · ${item.priority}` : ""}`}
+                subtitle={`${item.version}${item.latestVersion ? ` → ${item.latestVersion}` : ""}${item.priority ? ` · ${item.priority}` : ""}`}
                 chips={
                   <>
                     {item.recommendationKind ? (
@@ -165,22 +151,19 @@ export function DashboardPage() {
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-muted-foreground">
-            No available updates yet. Scan a connected repository to compare current versions with upstream
-            releases.
-          </p>
+          <p className="text-sm text-muted-foreground">No available updates in this scan.</p>
         )}
       </DashboardPanel>
 
-      <DashboardPanel title="Open findings" description="Security, update, and EOL issues from the latest scan.">
+      <DashboardPanel title="Open findings" description="Security, update, and EOL issues from this scan.">
         {data.findings.length ? (
           <ul className="divide-y">
             {data.findings.slice(0, 8).map((finding) => (
               <DashboardFeedRow
                 key={finding.id}
-                href={projectInventoryItemHref(finding.projectId, finding.componentName)}
+                href={sessionInventoryHref(finding.componentName)}
                 title={finding.componentName}
-                subtitle={`${finding.projectName ?? "Project"}${finding.currentVersion ? ` · ${finding.currentVersion}` : ""}${finding.recommendedVersion ? ` → ${finding.recommendedVersion}` : ""}`}
+                subtitle={`${finding.currentVersion ?? ""}${finding.recommendedVersion ? ` → ${finding.recommendedVersion}` : ""}`}
                 chips={
                   <>
                     <FindingTypeChip type={finding.findingType} />
@@ -191,37 +174,27 @@ export function DashboardPage() {
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-muted-foreground">No open findings on the latest scan.</p>
+          <p className="text-sm text-muted-foreground">No open findings on this scan.</p>
         )}
       </DashboardPanel>
 
-      <DashboardPanel title="Recent scans" description="Latest run per project, including scheduled and SBOM imports.">
-        {data.scans.length ? (
-          <ul className="divide-y">
-            {data.scans.map((scan) => {
-              const when = scan.completedAt ?? null;
-              const findingsLabel =
-                scan.status === "completed"
-                  ? `${scan.findingsFound ?? 0} finding${scan.findingsFound === 1 ? "" : "s"}`
-                  : lookupPalette(SCAN_STATUS_PALETTE, scan.status).label;
-              return (
-                <DashboardFeedRow
-                  key={scan.id}
-                  href={projectScansHref(scan.projectId)}
-                  title={scan.projectName}
-                  subtitle={
-                    when
-                      ? `${scanSourceLabel(scan.source ?? "github")} · ${findingsLabel} · ${formatDistanceToNow(new Date(when), { addSuffix: true })}`
-                      : `${scanSourceLabel(scan.source ?? "github")} · ${findingsLabel}`
-                  }
-                  chips={<ScanStatusChip status={scan.status} />}
-                />
-              );
-            })}
-          </ul>
-        ) : (
-          <p className="text-sm text-muted-foreground">No scans yet. Open a project and start a scan.</p>
-        )}
+      <DashboardPanel title="Scan" description="This run is not saved on a server.">
+        {data.scans.map((item) => {
+          const when = item.completedAt;
+          return (
+            <DashboardFeedRow
+              key={item.id}
+              href="/inventory"
+              title={item.projectName}
+              subtitle={
+                when
+                  ? `${scanSourceLabel(item.source ?? "github")} · ${item.findingsFound ?? 0} findings · ${formatDistanceToNow(new Date(when), { addSuffix: true })}`
+                  : scanSourceLabel(item.source ?? "github")
+              }
+              chips={<ScanStatusChip status={item.status} />}
+            />
+          );
+        })}
       </DashboardPanel>
     </div>
   );

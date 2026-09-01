@@ -1,35 +1,34 @@
 ---
 title: Sidebar
 description: How AppSidebar reads nested groups and Lucide icons from config/navigation.ts.
-lastUpdated: 2026-08-29
+lastUpdated: 2026-09-01
 related:
   - href: /documentation/layout/workspaces
-    title: Company label
-    description: Company name shown above the nav.
+    title: Session label
+    description: Brand shown above the nav.
   - href: /documentation/boilerplate-patterns
     title: Project patterns
     description: Add the route before you register the href.
 ---
 
-The app sidebar is **config-driven** for Dashboard, Projects, and Settings. You add a `NavItem` in `config/navigation.ts`, give it a Lucide icon, and (for nested sections) pass `children` or `items`.
+The app sidebar is **config-driven**. You add a `NavItem` in `config/navigation.ts`, give it a Lucide icon, and (for nested sections) pass `children` or `items`.
 
-Settings includes **Account**, **Company**, and **Preferences**. Primary nav is **Dashboard**, **Projects**, and **Settings**. **Projects** stays off the sidebar until the company has at least one project — the dashboard empty state is the add path. Inventory, updates, findings, and scans live on a project after you open it.
+Primary nav is **Dashboard**, **Scan**, **Report**, and **Settings**. Report is the inventory list at `/inventory`. Settings opens preferences (`/settings/preferences`) with no nested children. `/updates` and `/findings` still exist but are not in the sidebar.
 
-When the company has **two or more** projects, Projects becomes a collapsible group. The **Projects** label still opens `/projects`. Nested names open that project’s overview (up to eight). Extra projects stay on the list. One project keeps a single Projects link.
+**Documentation** is a secondary nav item. Set `visible: true` (default) to show it in the sidebar and on the public home header/footer. Set `visible: false` to hide those links. The `/documentation` site itself stays available at the URL.
 
-Project URLs are `/projects/:id/overview`, `/projects/:id/inventory`, `/projects/:id/inventory/:name`, and `/projects/:id/scans`. Breadcrumbs show the **project name**, not the UUID.
+Package pages are `/inventory/:name`. Breadcrumbs show **Report** and the package name, including scoped names.
 
 ## How it is wired
 
 ```
 config/navigation.ts          NavItem[] + NavGroup[]
-config/project-nav.ts         Nested project names (cap eight)
         ↓
 components/layout/sidebar/app-sidebar.tsx
-  TeamSwitcher                GET /api/company/context
-  NavMain                     primaryNavigation + project names from GET /api/projects
+  TeamSwitcher                SecureStack brand
+  NavMain                     primaryNavigation
   NavSecondary                secondaryNavigation
-  NavUser                     footer
+  NavUser                     New scan / Clear scan
 ```
 
 `AppSidebar` only composes those pieces. Nesting, active states, and collapsed flyout menus live in `nav-collapsible.tsx` and `nav-utils.ts`.

@@ -1,35 +1,55 @@
 ---
-title: Company & GitHub
-description: Accounts are companies. Projects belong to a company. GitHub tokens stay on the server.
-lastUpdated: 2026-08-29
+title: Self-host architecture
+description: No accounts. No user database. GitHub tokens stay in a session cookie. Scan results stay in the browser.
+lastUpdated: 2026-08-31
 related:
   - href: /documentation/onboarding
-    title: Onboarding
-    description: Sign up, name the company, then open the dashboard.
+    title: Scan flow
+    description: Connect GitHub or upload a file, then read the report.
   - href: /documentation/scanning
     title: Scanning & inventory
     description: Read GitHub and list real dependencies.
   - href: /documentation/intelligence
     title: Findings & intelligence
     description: CVEs, latest versions, and EOL.
-  - href: /documentation/monitoring
-    title: Scheduled monitoring
-    description: Cron scans and finding status.
 ---
 
-Every customer account is a **company**. Do not call this a tenant in the product UI. Database keys use `company_id`.
+SecureStack in this mode does **not** create companies, users, or projects. There is no Supabase requirement for the scan → dashboard path.
 
 ```text
-Company
- ├── Users
- └── Projects
-      ├── Repository (one GitHub repo, JSON on the project)
-      ├── Scans
-      └── Findings
+Browser
+  → Connect GitHub (OAuth / PAT) or upload a file
+  → POST /api/session/scan
+  → Scanner + intelligence (OSV, registries, EOL)
+  → JSON report
+  → sessionStorage in this tab
 ```
 
-Auth lives in **Supabase Auth**. The application `users` row links `auth.users.id` to a company. The first user is **ADMIN**.
+## What is stored where
 
-GitHub OAuth is a separate GitHub OAuth App (not “Login with GitHub”). The access token is encrypted and stored on `companies.github_connection`. API responses never return the token. Each project connects **one** GitHub repository, then chooses a **full-repo scan** or a **saved file list** (`projects.monitoring.scanMode` / `files`). **Start Scan** reads that scope and stores components on `scans.result_snapshot`. Scan interval lives on `companies.monitoring`; per-project on/off and scan scope on `projects.monitoring`. See [Scanning & inventory](/documentation/scanning), [Findings & intelligence](/documentation/intelligence), and [Scheduled monitoring](/documentation/monitoring).
+| Data | Where | Lifetime |
+| --- | --- | --- |
+| GitHub access token | httpOnly cookie `ss_github` (encrypted) or `GITHUB_TOKEN` env | About one hour, or process lifetime for env |
+| Scan report | Browser `sessionStorage` | Until you close the tab or click Clear scan |
+| Package intelligence (OSV, versions) | Fetched live during the scan | Not persisted as user data |
 
-Schema SQL to run in the Supabase SQL Editor lives in [`docs/supabase/`](/docs/supabase) in the repo (see the developer handoff).
+The server does not insert rows into `companies`, `users`, `projects`, `scans`, or `findings` for this flow.
+
+## GitHub
+
+GitHub OAuth is repository access, not product login. Start it with `GET /api/session/github?connect=1`. The callback writes the token into the session cookie and redirects to `/scan`. You can also `POST /api/session/github` with a personal access token.
+
+API responses never return the token to JavaScript. Listing repos and scanning happen on the server.
+
+## Scan APIs
+
+| Route | Purpose |
+| --- | --- |
+| `GET /api/session/github` | Connected? login + repository list |
+| `POST /api/session/github` | Save a PAT in the session cookie |
+| `DELETE /api/session/github` | Drop the cookie |
+| `POST /api/session/scan` | `{ source: "github" \| "sbom" \| "files" }` → enriched report |
+
+Scans are rate-limited per IP. GitHub reads still use the same caps as before: 400 unique packages, 80 manifests, 40 release-note lookups.
+
+Company-scoped routes under `/api/projects` and `/api/auth` still exist in the repo from the earlier SaaS path. The UI does not call them.

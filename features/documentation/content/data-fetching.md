@@ -1,7 +1,7 @@
 ---
 title: Data fetching
 description: TanStack Query plus the shared API client used on the dashboard.
-lastUpdated: 2026-08-28
+lastUpdated: 2026-08-31
 related:
   - href: /documentation/boilerplate-patterns
     title: Project patterns
@@ -11,27 +11,20 @@ related:
     description: Table, badge, and card primitives used on list pages.
 ---
 
-Client components do not call databases or third-party APIs directly. They call **internal** `/api/*` routes through `apiGet` / `apiPost` / `apiPatch` / `apiDelete`, then cache the result with TanStack Query.
+Client components do not call databases or third-party APIs directly. They call **internal** `/api/*` routes through `apiGet` / `apiPost` / `apiPatch` / `apiDelete` when they need the server (GitHub, scans). The dashboard report itself is kept in a Zustand store backed by `sessionStorage`.
 
 ## Hook pattern
 
-Reference: `features/dashboard/hooks/use-dashboard-stats.ts`
+Reference: `features/scan-session/hooks/use-scan-session.ts`
 
-```ts filename="features/dashboard/hooks/use-dashboard-stats.ts"
+```ts filename="features/scan-session/hooks/use-scan-session.ts"
 import { useQuery } from "@tanstack/react-query"
 import { apiGet } from "@/lib/api/client"
 
-type DashboardStatsResponse = {
-  stats: { label: string; value: string }[]
-}
-
-export function useDashboardStats() {
+export function useGithubSession() {
   return useQuery({
-    queryKey: ["dashboard", "stats"],
-    queryFn: () =>
-      apiGet<DashboardStatsResponse>("/api/dashboard/stats").then(
-        (data) => data.stats,
-      ),
+    queryKey: ["session", "github"],
+    queryFn: () => apiGet("/api/session/github"),
   })
 }
 ```
