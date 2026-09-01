@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { isAuthDevBypassEnabled, resolveProxyAccessDecision } from "@/lib/auth/proxy-access";
+import { resolveProxyAccessDecision } from "@/lib/proxy-access";
 
 function applyAccessDecision(
   request: NextRequest,
@@ -10,23 +10,12 @@ function applyAccessDecision(
     return NextResponse.next({ request });
   }
 
-  if (decision === "redirect-dashboard") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
-
-  return NextResponse.redirect(new URL("/", request.url));
+  return NextResponse.redirect(new URL("/dashboard", request.url));
 }
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  return applyAccessDecision(
-    request,
-    resolveProxyAccessDecision({
-      pathname,
-      isAuthenticated: false,
-      authBypassEnabled: isAuthDevBypassEnabled(),
-    }),
-  );
+  return applyAccessDecision(request, resolveProxyAccessDecision({ pathname }));
 }
 
 export const config = {

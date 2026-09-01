@@ -20,8 +20,8 @@ export type NavItem = {
    */
   match?: "exact" | "prefix";
   /**
-   * When `false`, hide this item from the sidebar and the public home chrome.
-   * Omitted or `true` means visible.
+   * When `false`, hide this item from nav lists that use `visibleNavItems`
+   * (app sidebar, command menu). Omitted or `true` means visible.
    */
   visible?: boolean;
 };

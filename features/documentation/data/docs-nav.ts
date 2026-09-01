@@ -1,25 +1,19 @@
-import type { CatalogId } from "@/features/documentation/catalog/catalog-registry";
-
 export type DocsNavLink = {
   title: string;
   href: string;
-  file?: string;
-  catalog?: CatalogId;
+  file: string;
 };
 
 export type DocsNavGroup = {
   title: string;
   items: DocsNavLink[];
-  /** When false, the group stays expanded (Getting started). Defaults to true. */
+  /** When false, the group stays expanded. Defaults to true. */
   collapsible?: boolean;
 };
 
 /**
  * Sidebar for in-app docs. Markdown pages set `file` (relative to
- * `features/documentation/content/`). Live UI previews set `catalog`.
- *
- * To add a markdown page: create the file, then register it here.
- * To add a catalog page: add a section under `features/documentation/catalog/`.
+ * `features/documentation/content/`).
  */
 export const docsNavigation: DocsNavGroup[] = [
   {
@@ -28,75 +22,35 @@ export const docsNavigation: DocsNavGroup[] = [
     items: [
       { title: "Overview", href: "/documentation", file: "getting-started.md" },
       {
-        title: "Project patterns",
-        href: "/documentation/boilerplate-patterns",
-        file: "boilerplate-patterns.md",
+        title: "Connect GitHub",
+        href: "/documentation/connect",
+        file: "connect.md",
       },
       {
-        title: "Self-host architecture",
-        href: "/documentation/architecture/tenancy",
-        file: "architecture/tenancy.md",
+        title: "Run a scan",
+        href: "/documentation/scan",
+        file: "scan.md",
       },
       {
-        title: "Scan flow",
-        href: "/documentation/onboarding",
-        file: "onboarding.md",
+        title: "Read the report",
+        href: "/documentation/report",
+        file: "report.md",
       },
-      {
-        title: "Scanning & inventory",
-        href: "/documentation/scanning",
-        file: "scanning.md",
-      },
+    ],
+  },
+  {
+    title: "How it works",
+    collapsible: false,
+    items: [
       {
         title: "Findings & intelligence",
         href: "/documentation/intelligence",
         file: "intelligence.md",
       },
       {
-        title: "Scheduled monitoring",
-        href: "/documentation/monitoring",
-        file: "monitoring.md",
-      },
-      {
-        title: "Data fetching",
-        href: "/documentation/data-fetching",
-        file: "data-fetching.md",
-      },
-      {
-        title: "Writing docs",
-        href: "/documentation/writing-docs",
-        file: "writing-docs.md",
-      },
-    ],
-  },
-  {
-    title: "UI components",
-    items: [
-      { title: "Overview", href: "/documentation/ui", file: "ui.md" },
-      { title: "Button", href: "/documentation/ui/button", catalog: "actions" },
-      { title: "Forms", href: "/documentation/ui/forms", catalog: "forms" },
-      {
-        title: "Data display",
-        href: "/documentation/ui/data-display",
-        catalog: "data-display",
-      },
-      { title: "Overlays", href: "/documentation/ui/overlays", catalog: "overlays" },
-      { title: "Feedback", href: "/documentation/ui/feedback", catalog: "feedback" },
-      {
-        title: "Navigation",
-        href: "/documentation/ui/navigation",
-        catalog: "navigation",
-      },
-    ],
-  },
-  {
-    title: "Layout",
-    items: [
-      { title: "Sidebar", href: "/documentation/layout/sidebar", file: "layout/sidebar.md" },
-      {
-        title: "Session label",
-        href: "/documentation/layout/workspaces",
-        file: "layout/workspaces.md",
+        title: "Self-host",
+        href: "/documentation/self-host",
+        file: "self-host.md",
       },
     ],
   },

@@ -1,4 +1,4 @@
-import { requireAppUrl } from "@/server/supabase/env";
+import { requireAppUrl } from "@/lib/env";
 
 /** Classic OAuth has no read-only private-repo scope. `repo` is required to list and clone private repos; scans never write. */
 export const GITHUB_OAUTH_SCOPES = "read:user repo";
@@ -11,7 +11,7 @@ export function getGitHubOAuthConfig() {
 
   if (!clientId || !clientSecret) {
     throw new Error(
-      "GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET are required. See docs/supabase/README.md.",
+      "GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET are required. See README.md.",
     );
   }
 

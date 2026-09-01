@@ -1,89 +1,80 @@
 ---
 title: Findings & intelligence
-description: After a scan, SecureStack checks latest versions, GitHub release notes, OSV/NVD CVE aliases, and end-of-life status, then shows findings from that snapshot.
+description: After inventory is parsed, SecureStack checks latest versions, GitHub release notes, OSV CVEs, and end-of-life status, then recommends whether to update.
 lastUpdated: 2026-09-01
 related:
-  - href: /documentation/scanning
-    title: Scanning & inventory
-    description: GitHub repository reads and dependency parsing.
-  - href: /documentation/architecture/tenancy
-    title: Self-host architecture
-    description: Tokens stay in a session cookie.
+  - href: /documentation/scan
+    title: Run a scan
+    description: How packages are discovered before intelligence runs.
+  - href: /documentation/report
+    title: Read the report
+    description: Where findings appear on Dashboard, Report, and package pages.
 ---
 
-A scan turns inventory into an action: **a new version exists, these are the changes, this is the security impact, and this is what we recommend.**
+A scan turns a package list into a decision: **a newer version exists, these are the changes, this is the security impact, and this is what we recommend.**
 
 ```text
-Scan
-  → Parse dependencies and version catalogs
-  → Latest version (package registries + GitHub Releases)
+Parsed inventory
+  → Latest version (registries + GitHub Releases)
   → Release notes / changelog
   → OSV (CVE aliases include NVD)
   → EOL (endoflife.date)
-  → Recommendation (Update urgently / Update / Review / Wait)
-  → Impact + P1–P4
-  → Dashboard / Report / `/inventory/:name`
+  → Recommendation + impact + P1–P4
+  → Dashboard / Report / package page
 ```
 
-No database write. Findings are derived from the scan JSON in this browser tab. Status (ignored / accepted risk) is not stored. Intelligence is fetched live from external APIs; SecureStack does not store a global CVE database.
+Intelligence is fetched **live** during the scan. SecureStack does not keep a CVE database or finding history. There is no “ignored” or “accepted risk” status. If you upgrade and scan again, that CVE or outdated row is simply gone.
 
 ## Sources
 
 | Question | Source |
 | --- | --- |
-| Latest version | npm registry, PyPI, crates.io, Go proxy, Maven Central, GitHub Releases (pinned binaries such as `runc`) |
-| What changed | GitHub release notes between the current tag and the latest tag, then CHANGELOG.md if notes are empty |
-| CVE / severity / fixed version | [OSV](https://osv.dev) (`/v1/querybatch` + `/v1/vulns/:id`). NVD CVE ids come from OSV aliases. Pinned GitHub binaries such as `runc` are queried as Go modules (`github.com/opencontainers/runc`). |
-| End of life | [endoflife.date](https://endoflife.date) for runtimes and common Docker images (`node`, `python`, `postgres`, …) |
+| Latest version | npm, PyPI, crates.io, Go proxy, Maven Central, GitHub Releases (pinned binaries such as `runc`) |
+| What changed | GitHub release notes between the current tag and the latest tag; `CHANGELOG.md` if notes are empty |
+| CVE / severity / fixed version | [OSV](https://osv.dev). NVD CVE ids come from OSV aliases. Pinned GitHub binaries such as `runc` are queried as Go modules (`github.com/opencontainers/runc`). |
+| End of life | [endoflife.date](https://endoflife.date) for runtimes and common images (`node`, `python`, `postgres`, …) |
 
-If a feed is unreachable, the scan still completes with the GitHub inventory.
-
-## Recommendations
-
-| Kind | When |
-| --- | --- |
-| `update_urgent` | The installed version has a known CVE and a newer release exists |
-| `update` | Patch (or a security fix in the new release) with no known breaking change |
-| `review` | Major version or breaking-change language in the notes |
-| `wait` | Minor update with no known security issue and no meaningful change notes |
-
-Open a package from Inventory (`/projects/:id/inventory/:name`) to see current → new, categorized changes, security, findings, and the recommendation.
-
-The inventory table splits rank from action. **Priority** is P1–P4 (hover for why). **Status** is one action chip — Update urgently, Review required, Update recommended, or Up to date — plus a CVE count when OSV matched. Major/minor bump size is not repeated next to the action. **Impact** stays its own column.
-
-Default Inventory and Updates views show **infra** (version catalogs such as `bom.yaml`, Docker images) and **direct** dependencies from package manifests. Transitive lockfile packages appear only when they have a CVE; other transitive bumps are grouped by parent. Users should not have to inspect hundreds of `node_modules` helpers.
-
-Updates are ranked **P1–P4**. Score uses severity (CVE / security notes), production usage, breaking changes, and how long the fix has been available. **Impact** is Low / Medium / High / Critical from the same inputs. Production + a security fix shows **Update within 7 days**. The project **environment** (production / staging / development) is stored on `projects.monitoring` and applied when inventory is loaded, so changing environment re-ranks without a new scan.
-
-Findings refresh from the latest scan. If a version is updated, that CVE or outdated-package row disappears on the next scan. Finding status (ignored / accepted risk) is not stored yet.
-
-## Coverage limits
-
-CVE, latest-version, and EOL checks run on at most **400 unique packages** (`MAX_INTEL_PACKAGES`), ordered infra → direct → transitive. GitHub release notes run on at most **40 outdated packages** (`MAX_RELEASE_LOOKUPS`) in the same order. Default Inventory already hides routine lockfile packages, so those limits cover the pins and declared dependencies on the page. Dashboard “updates available” counts actionable rows, not every lockfile bump.
-
-The scanner reads at most **80 manifest files** per repository (`MAX_MANIFEST_FILES`). Remaining lockfiles are skipped so the scan stays inside the request time limit.
-
-OSV `/v1/querybatch` is sent in chunks of 150 packages.
+If a feed is unreachable, the scan still completes with the inventory it already has.
 
 ## Finding types
 
-| Type | When |
+| Type | When it appears |
 | --- | --- |
-| `SECURITY` | OSV reports a vulnerability for the installed version |
-| `UPDATE` | Latest version is newer and there is no security finding for that package |
-| `EOL` | The cycle is end of life or within 180 days of EOL |
+| Security | OSV reports a vulnerability for the installed version |
+| Update | A newer version exists and there is no security finding for that package |
+| EOL | The cycle is end of life, or within 180 days of EOL |
 
-Recommendation text always includes the current version and the upgrade target when known.
+## Recommendations
 
-Issue type, severity, finding status, inventory version status, recommendation kind, and EOL chips all read from `config/issue-palette.ts`. Colors come from shared `TOKENS` (critical, danger, warning, caution, info, success, special, neutral). Change a token there and every chip updates.
+Shown as chips on Report and on the package page:
 
-## APIs
-
-| Request | Result |
+| You see | When |
 | --- | --- |
-| `GET /api/findings` | Findings from each project’s latest completed scan |
-| `GET /api/projects/:id/findings` | Findings for one project, from its latest scan |
-| `PATCH /api/findings/:id` | Not stored yet (`501`) |
-| `GET /api/dashboard/stats` | Update intelligence counts plus recent updates from the latest scans |
+| **Update urgently** | Installed version has a known CVE and a newer release exists |
+| **Update** | Patch (or a security fix in the new release) with no known breaking change |
+| **Review** | Major version, or breaking-change language in the notes |
+| **Wait** | Minor update, no known security issue, no meaningful change notes |
 
-Status changes are not saved. Re-run **Start Scan** on an existing project to refresh findings and release notes.
+Recommendation text includes the current version and the upgrade target when they are known.
+
+## Priority and impact
+
+**Priority** is P1–P4 (hover on the chip for why). Score uses CVE / security notes, breaking changes, and how long the fix has been available.
+
+**Impact** is Low / Medium / High / Critical from the same inputs.
+
+This product has no project “environment” setting. Session scans treat environment as unknown, so ranking does not apply a production bonus.
+
+Dashboard “updates available” counts **actionable** rows (infra, declared dependencies, and transitives with a CVE), not every lockfile bump.
+
+## Coverage limits
+
+| Check | Cap | Order |
+| --- | --- | --- |
+| CVE, latest version, EOL | 400 unique packages | Infra → direct → transitive |
+| GitHub release notes | 40 outdated packages | Same order |
+| OSV querybatch | Chunks of 150 packages | — |
+
+Default Report already hides routine lockfile packages, so the 400-package budget covers what you see on the page.
+
+Open a package from Report to see current → new, categorized changes, security, and the recommendation together. The findings table at `/findings` is the same snapshot.

@@ -25,7 +25,7 @@ cp .env.example .env.local
 3. If you use OAuth or a pasted PAT, set `GITHUB_TOKEN_ENCRYPTION_KEY` (16+ characters)
 4. `pnpm dev`
 
-Open `/`, then **Scan a repository**. You do not need Supabase.
+Open `/`, then **Scan a repository**.
 
 Run all checks before pushing:
 
@@ -35,13 +35,11 @@ pnpm check
 
 ## Data model (this mode)
 
-Nothing is written to Postgres for a session scan.
+Nothing is written to a database for a session scan.
 
 ```text
 GitHub cookie (optional, ~1 hour) + sessionStorage report
 ```
-
-Leftover company tables and Auth routes remain in the repo from an earlier SaaS path. The UI does not use them.
 
 ## Project layout
 
@@ -96,5 +94,6 @@ There is no login wall. `proxy.ts` allows app routes. `/login`, `/signup`, and `
 
 ## After handoff
 
-1. Keep docs in sync using `docs/DOC_MAP.md`
-2. Do not add a user table unless persistence becomes an explicit product choice
+1. Keep **product** docs in sync using `docs/DOC_MAP.md` (`/documentation`)
+2. Keep contributor conventions in `AGENTS.md` — not in the public docs site
+3. Do not add a user table unless persistence becomes an explicit product choice

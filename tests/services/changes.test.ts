@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { diffSnapshots } from "@/services/intelligence/changes";
-import type { ScanSnapshot } from "@/server/supabase/types";
+import type { ComponentRef } from "@/services/intelligence/changes";
 
 function snapshot(
   components: Array<{
@@ -9,15 +9,12 @@ function snapshot(
     cves?: string[];
     eolStatus?: string;
   }>,
-): ScanSnapshot {
+): { components: ComponentRef[] } {
   return {
-    repositories: [],
     components: components.map((component) => ({
       name: component.name,
       ecosystem: "npm",
       version: component.version,
-      sourceFile: "package.json",
-      repository: "acme/app",
       cves: component.cves,
       eolStatus: component.eolStatus,
     })),

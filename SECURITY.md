@@ -6,21 +6,21 @@ Security fixes are applied on the default branch (`main` / `master`). Upgrade to
 
 ## Authentication
 
-SecureStack uses **Supabase Auth** (email + password). `AUTH_DEV_BYPASS=true` skips the login wall in local development only and is ignored in production. Leave it off to test logout.
+There is no product login and no user database. The app is public.
+
+GitHub OAuth (`read:user repo`) is repository access, not login. Classic OAuth has no read-only private-repo scope; scans never write to GitHub. Tokens live in an encrypted httpOnly cookie (`ss_github`) or `GITHUB_TOKEN` on the server. They are never returned to JavaScript and are not written to a database.
 
 Before deploying:
 
-1. Set `ENFORCE_PRODUCTION_ENV=true` so missing secrets fail fast.
-2. Configure Upstash Redis for shared login rate limiting across instances.
-3. Keep `SUPABASE_SERVICE_ROLE_KEY` and `GITHUB_TOKEN_ENCRYPTION_KEY` out of the client bundle, logs, and git.
+1. Set `GITHUB_TOKEN_ENCRYPTION_KEY` if you use OAuth or a pasted PAT.
+2. Configure Upstash Redis if you need shared scan rate limiting across instances.
+3. Keep `GITHUB_CLIENT_SECRET` and `GITHUB_TOKEN_ENCRYPTION_KEY` out of the client bundle, logs, and git.
 
-GitHub OAuth (`read:user repo`) is for repository access, not login. Classic OAuth has no read-only private-repo scope; scans never write to GitHub.
-
-Treat inventory and vulnerability data as sensitive company information.
+Treat inventory and vulnerability data as sensitive.
 
 ## API routes
 
-`proxy.ts` allows `/api/*` without a session cookie so health checks work. Every data route must call `requireSession` (or `CRON_SECRET` for `/api/cron/scans`). Company rows are scoped in services via `requireCompanyContext` / `getProject` because the service-role client bypasses RLS.
+`proxy.ts` allows the product without a session. Scan and GitHub session routes are rate-limited. Old `/login` and `/signup` URLs redirect to `/dashboard`.
 
 ## Known dependency notes
 

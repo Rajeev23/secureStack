@@ -10,9 +10,6 @@ jobs:
   check:
     runs-on: ubuntu-latest
     env:
-      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: test-publishable-key
-      SUPABASE_SERVICE_ROLE_KEY: test-service-role-key
       APP_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v4

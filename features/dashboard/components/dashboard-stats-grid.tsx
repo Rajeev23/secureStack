@@ -2,7 +2,7 @@
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCard } from "@/features/dashboard/components/stat-card";
-import type { DashboardStat } from "@/features/dashboard/hooks/use-dashboard-stats";
+import type { DashboardStat } from "@/features/dashboard/types";
 
 export function DashboardStatsGrid({ stats }: { stats: DashboardStat[] }) {
   if (!stats.length) {

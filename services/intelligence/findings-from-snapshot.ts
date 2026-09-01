@@ -7,7 +7,7 @@ import {
 import type { IntelligenceFindingDraft, VersionStatus } from "@/services/intelligence/types";
 import { isOutdated } from "@/services/intelligence/version";
 import { isDefaultInventoryRow } from "@/services/intelligence/visibility";
-import type { FindingSeverity } from "@/server/supabase/types";
+import type { FindingSeverity } from "@/services/intelligence/types";
 
 export type FindingSourceComponent = {
   name: string;

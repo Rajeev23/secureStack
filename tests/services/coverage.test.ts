@@ -7,7 +7,6 @@ import {
 } from "@/services/intelligence/coverage";
 import { MAX_MANIFEST_FILES } from "@/services/scanner/scan-repository";
 import { paginate, parsePageQuery } from "@/lib/pagination";
-import { scanListSnapshot } from "@/services/scanner/summary";
 
 describe("selectIntelBudget", () => {
   it("keeps every unique package when under the cap", () => {
@@ -70,27 +69,6 @@ describe("mergeCoverage", () => {
         { uniquePackages: 500, checkedPackages: 400, truncated: true },
       ]),
     ).toEqual({ uniquePackages: 510, checkedPackages: 410, truncated: true });
-  });
-});
-
-describe("scanListSnapshot", () => {
-  it("drops components from list payloads", () => {
-    const slim = scanListSnapshot({
-      repositories: [{ fullName: "acme/app", branch: "main", files: ["package.json"] }],
-      components: [{ name: "axios", ecosystem: "npm", version: "1.7.9", sourceFile: "package.json", repository: "acme/app" }],
-      changes: {
-        added: [],
-        removed: [],
-        updated: [],
-        newCves: ["CVE-2024-1"],
-        resolvedCves: [],
-        alerts: [{ kind: "cve", severity: "HIGH", summary: "New CVE" }],
-      },
-      coverage: { uniquePackages: 1, checkedPackages: 1, truncated: false },
-    });
-    expect(slim?.components).toEqual([]);
-    expect(slim?.changes?.newCves).toEqual(["CVE-2024-1"]);
-    expect(slim?.coverage?.checkedPackages).toBe(1);
   });
 });
 

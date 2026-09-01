@@ -4,7 +4,7 @@ import Link from "next/link";
 import { IntelligenceBadges } from "@/features/inventory/components/intelligence-badges";
 import { PriorityChip } from "@/components/shared/issue-chip";
 import type { ComponentDetail } from "@/features/inventory/components/component-detail-view";
-import { projectInventoryItemHref } from "@/features/projects/model";
+import { sessionInventoryHref } from "@/features/scan-session/lib/derive";
 
 type UpdateFeedItem = ComponentDetail & {
   projectName?: string;
@@ -43,9 +43,7 @@ export function UpdateFeedList({
       {items.length ? (
         <ul className="divide-y rounded-xl border bg-card">
           {items.map((item) => {
-            const href =
-              hrefFor?.(item) ??
-              (item.projectId ? projectInventoryItemHref(item.projectId, item.name) : null);
+            const href = hrefFor?.(item) ?? sessionInventoryHref(item.name);
             const body = (
               <>
                 <span className="min-w-0">

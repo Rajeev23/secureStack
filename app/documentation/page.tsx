@@ -8,7 +8,7 @@ export function generateMetadata(): Metadata {
     title: doc?.title ?? "Documentation",
     description:
       doc?.description ??
-      "Developer guides for SecureStack — company accounts, scanning, and UI.",
+      "How to connect GitHub, run a scan, and read findings in SecureStack.",
   };
 }
 

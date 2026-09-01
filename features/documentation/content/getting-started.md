@@ -1,98 +1,75 @@
 ---
 title: Overview
-description: SecureStack is patch and dependency update intelligence. Scan GitHub or a file. No accounts. Nothing stored.
+description: SecureStack is patch and dependency update intelligence. Connect GitHub or upload a file. No accounts. Nothing stored.
 lastUpdated: 2026-09-01
 related:
-  - href: /documentation/boilerplate-patterns
-    title: Project patterns
-    description: Follow the project structure when you add a product feature.
-  - href: /documentation/architecture/tenancy
-    title: Self-host architecture
-    description: Session scans with no user database.
-  - href: /documentation/onboarding
-    title: Scan flow
-    description: Connect GitHub or upload a file, then read the report.
-  - href: /documentation/scanning
-    title: Scanning & inventory
-    description: Read GitHub and list real dependencies.
+  - href: /documentation/connect
+    title: Connect GitHub
+    description: OAuth, a personal access token, or a server token.
+  - href: /documentation/scan
+    title: Run a scan
+    description: GitHub, an SBOM, or manifests — then what the scanner does.
+  - href: /documentation/report
+    title: Read the report
+    description: Dashboard, Report, and package detail in this tab.
   - href: /documentation/intelligence
     title: Findings & intelligence
     description: CVEs, latest versions, EOL, and upgrade recommendations.
-  - href: /documentation/ui
-    title: UI components
-    description: Browse live examples of the shared design-system components.
 ---
 
-**SecureStack** is **patch and dependency update intelligence**. You connect a GitHub repository or upload a file. The product discovers open-source components, tracks current and latest versions, explains what changed, flags CVEs and EOL software, and recommends whether to update.
+**SecureStack** tells you what open-source software you ship, whether a newer version exists, what changed, and whether you should update.
 
-This mode has **no signup**, **no company records**, and **no database of your scan**. Results stay in the browser tab. A GitHub token, if you connect one, is held in a short-lived httpOnly cookie so the server can read the repo — it is not written to Postgres.
+There is **no signup** and **no user database**. You connect GitHub or upload a file. The server reads the repo or the file, fetches intelligence, and returns a JSON report. That report stays in **this browser tab**. Close the tab (or click **Clear scan**) and it is gone.
 
-## Product flow
+## What you get
 
-1. Open `/` or `/scan`.
-2. Connect **GitHub** (OAuth or a personal access token) **or** upload an **SBOM** / manifests.
-3. Discover open-source components in use.
-4. Compare **current vs latest**, including release notes when they exist.
-5. Detect **CVEs, security vulnerabilities, and EOL software**.
-6. Get **Update urgently / Update / Review / Wait**.
-7. Close the tab — the report is gone.
+1. A list of packages and pinned binaries actually in use.
+2. **Current vs latest**, with release notes when GitHub publishes them.
+3. **CVEs** (via OSV, including NVD aliases) and **end-of-life** software.
+4. A recommendation: **Update urgently**, **Update**, **Review**, or **Wait**, plus P1–P4 priority.
 
-## What is included today
-
-| Area | Ready to reuse |
-| --- | --- |
-| Application shell | Responsive sidebar, header, breadcrumbs, and light/dark theme |
-| Public home | Marketing page at `/` with Scan a repository (no Sign in / Sign up) |
-| Session scan | `POST /api/session/scan` — GitHub, CycloneDX/SPDX, or uploaded manifests |
-| GitHub | OAuth or PAT in an encrypted session cookie. Optional `GITHUB_TOKEN` env on the server |
-| Feature structure | Thin App Router routes backed by self-contained modules under `features/` |
-| Developer workflow | Type checking, tests, navigation validation, production builds, CI, and synchronized documentation |
-
-Dashboard and Report (`/inventory`) read the last scan from `sessionStorage`. Nothing is inserted into `companies`, `users`, `projects`, `scans`, or `findings`.
-
-## Why the structure matters
-
-The repository separates routing, product features, server-side domain logic, and shared UI:
+## How a session works
 
 ```text
-app/          routes, layouts, loading, and API handlers
-features/     product pages, feature UI, hooks, and session stores
-services/     GitHub, scanner, intelligence, and session-scan (no DB)
-components/   shared layout, feedback, and design-system components
-config/       application and navigation configuration
-lib/          reusable utilities and client helpers
-stores/       global UI chrome state
+/scan
+  → Connect GitHub  or  upload an SBOM  or  upload manifests
+  → Server parses files and checks OSV / registries / EOL
+  → JSON report returned once
+  → Dashboard and Report read it from this tab
 ```
 
-Start with [Project patterns](/documentation/boilerplate-patterns) before adding a feature.
+| You | The product |
+| --- | --- |
+| [Connect GitHub](/documentation/connect) | Short-lived encrypted cookie. Token never written to a database. |
+| [Run a scan](/documentation/scan) | GitHub (up to 8 repos), CycloneDX/SPDX JSON, or up to 40 files. |
+| [Read the report](/documentation/report) | Dashboard, Report (`/inventory`), package pages. |
+| Close the tab | Report discarded. Cookie expires in about an hour. |
 
-## Self-host
+File and SBOM scans do not need GitHub.
 
-```bash
-pnpm install
-cp .env.example .env.local
-```
+## Pages in the app
 
-Set `APP_URL`, GitHub OAuth **or** `GITHUB_TOKEN`, and `GITHUB_TOKEN_ENCRYPTION_KEY` if you use OAuth or a pasted PAT. You do **not** need Supabase for this flow.
+| Page | What it shows |
+| --- | --- |
+| `/` | Public home |
+| `/scan` | Connect GitHub or upload a file |
+| `/dashboard` | KPIs and a feed from the last scan |
+| `/inventory` | Report — infra pins and declared dependencies |
+| `/inventory/:name` | One package: current → new, changes, security, recommendation |
+| `/settings/preferences` | Theme and layout only |
+| `/documentation` | This site |
 
-```bash
-pnpm dev
-```
+`/updates` and `/findings` still work if you open the URL. They are not in the product sidebar.
 
-Open `http://localhost:3000`, then **Scan a repository**.
+## What this product does not do
 
-pnpm 11 blocks dependency build scripts until they are listed in `pnpm-workspace.yaml` under `allowBuilds`. This repo already allows `esbuild`, `sharp`, and `unrs-resolver`.
+- Create accounts, companies, or projects
+- Store scan history or GitHub tokens in a database
+- Re-scan on a schedule, or send Slack/email alerts
+- Open pull requests or apply patches
 
-## Recommended first steps
+To watch a repository over time, run a new scan when you need a fresh report. See [Self-host](/documentation/self-host) to run the app yourself.
 
-1. Create a GitHub OAuth App (callback `http://localhost:3000/api/github/callback`) **or** export `GITHUB_TOKEN`.
-2. Read [Self-host architecture](/documentation/architecture/tenancy).
-3. Read [Scan flow](/documentation/onboarding).
-4. Browse [UI components](/documentation/ui) before creating a new primitive.
-5. Run `pnpm check` before pushing.
+## Source
 
-## Open source and community
-
-The project is licensed under **MIT**. Contributions should preserve the architecture, include tests for behavior changes, and update the matching documentation in the same pull request.
-
-See `CONTRIBUTING.md` and `docs/HANDOFF.md`. The public documentation you are reading lives at `/documentation`.
+SecureStack is MIT-licensed. The repository is [github.com/Rajeev23/secureStack](https://github.com/Rajeev23/secureStack).

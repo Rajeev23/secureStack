@@ -1,4 +1,4 @@
-import type { FindingSeverity } from "@/server/supabase/types";
+import type { FindingSeverity } from "@/services/intelligence/types";
 import {
   changeSummaryHasNotes,
   type ChangeSummary,

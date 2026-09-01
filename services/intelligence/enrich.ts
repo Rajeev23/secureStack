@@ -6,7 +6,7 @@ import {
   type IntelligenceCoverage,
 } from "@/services/intelligence/coverage";
 import { scoreUpdateImpact } from "@/services/intelligence/impact";
-import type { ProjectEnvironment } from "@/services/monitoring/schedule";
+import type { ProjectEnvironment } from "@/services/intelligence/impact";
 import { lookupEol } from "@/services/intelligence/eol";
 import { mapPool } from "@/services/intelligence/http";
 import {

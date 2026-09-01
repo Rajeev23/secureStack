@@ -4,7 +4,7 @@ import {
   getRequestIp,
   getUpdatedRateLimitRecord,
   isRateLimitBlocked,
-} from "@/lib/auth/rate-limit";
+} from "@/lib/rate-limit";
 
 const WINDOW_MS = 15 * 60 * 1000;
 const MAX_ATTEMPTS = 8;

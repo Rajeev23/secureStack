@@ -1,8 +1,6 @@
-import Link from "next/link";
 import { DependencyTierChip, EnvironmentChip, ImpactChip, PriorityChip } from "@/components/shared/issue-chip";
 import { IntelligenceBadges } from "@/features/inventory/components/intelligence-badges";
 import { UpdateChangeSections } from "@/features/inventory/components/update-change-sections";
-import { projectOverviewHref } from "@/features/projects/model";
 
 export type ComponentDetail = {
   name: string;
@@ -51,10 +49,9 @@ function formatReleaseDate(value: string | null | undefined): string | null {
 
 type ComponentDetailViewProps = {
   component: ComponentDetail;
-  showProjectLink?: boolean;
 };
 
-export function ComponentDetailView({ component, showProjectLink = false }: ComponentDetailViewProps) {
+export function ComponentDetailView({ component }: ComponentDetailViewProps) {
   const latest = component.latestVersion;
   const hasUpdate = Boolean(latest && latest !== component.version);
   const cves = [...new Set(component.cves ?? [])];
@@ -195,14 +192,6 @@ export function ComponentDetailView({ component, showProjectLink = false }: Comp
         </p>
       </section>
 
-      {showProjectLink && component.projectId ? (
-        <p>
-          Used in{" "}
-          <Link href={projectOverviewHref(component.projectId)} className="text-primary hover:underline">
-            {component.projectName ?? "project"}
-          </Link>
-        </p>
-      ) : null}
     </div>
   );
 }

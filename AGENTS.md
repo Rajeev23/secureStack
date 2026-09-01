@@ -67,14 +67,9 @@ export { DashboardPage as default } from "@/features/dashboard";
 | Path | Purpose |
 |------|---------|
 | `app/layout.tsx` | Root layout, fonts, `Providers` |
-| `app/(dashboard)/layout.tsx` | Wraps authenticated pages in `AppShell` |
+| `app/(dashboard)/layout.tsx` | Wraps product pages in `AppShell` |
 | `app/(dashboard)/loading.tsx` | Route-level loading UI |
 | `app/(dashboard)/error.tsx` | Route-level error boundary |
-| `app/login/page.tsx` | Public login page |
-| `app/signup/page.tsx` | Public signup page |
-| `app/forgot-password/page.tsx` | Public password reset request |
-| `app/reset-password/page.tsx` | Public set-new-password page |
-| `app/onboarding/page.tsx` | Authenticated company setup |
 | `app/documentation/` | Public documentation (own layout) |
 
 ### `features/` — feature modules
@@ -129,10 +124,13 @@ Do not add a new `lib/<noun>/` folder for the next domain noun. GitHub, OSV, and
 
 | File | Purpose |
 |------|---------|
+| `config/app.ts` | App name, GitHub repo URL, documentation placement (`home` / `sidebar`) |
 | `config/navigation.ts` | Sidebar nav groups (`primaryNavigation`, `secondaryNavigation`) |
 | `config/issue-palette.ts` | Colors and labels for issue type, severity, finding status, version drift, EOL, and scan state |
 
-When adding a sidebar route, update `config/navigation.ts` so the sidebar and breadcrumbs stay in sync. Primary nav is Dashboard, Scan, Report (`/inventory`), and Settings (opens preferences). Package detail is `/inventory/:name`. `/updates` and `/findings` still exist but are not in the sidebar. Documentation is in `secondaryNavigation`; set `visible: false` on that item to hide it from the sidebar and the home header/footer. The `/documentation` route still works if you open the URL.
+When adding a sidebar route, update `config/navigation.ts` so the sidebar and breadcrumbs stay in sync. Primary nav is Dashboard, Scan, Report (`/inventory`), and Settings (opens preferences). Package detail is `/inventory/:name`. `/updates` and `/findings` still exist but are not in the sidebar.
+
+Documentation is `documentationNavItem` in `config/navigation.ts`. Where it appears is `appConfig.documentation` in `config/app.ts`: `home` (public header/footer) and `sidebar` (app sidebar). The `/documentation` route always works.
 
 ### `stores/` — global client state
 
@@ -187,7 +185,7 @@ export const useExampleStore = create<ExampleState>()(
 2. Add migration logic in `persistMigrate` for each older version (today it pass-throughs unchanged data).
 3. Use `partialize` so only serializable fields are saved — never persist functions.
 
-**Current persisted stores:** `sidebar-store`, `layout-store`, `command-menu-store`, `company-context-store`.
+**Current persisted stores:** `sidebar-store`, `layout-store`, `command-menu-store`.
 
 ### `lib/` and `hooks/`
 
@@ -199,8 +197,8 @@ Keep `lib/` free of GitHub/OSV/Slack I/O. Feature-local helpers stay under `feat
 - `lib/fonts.ts` — font CSS variables
 - `lib/scan-source.ts` — scan source display labels
 - `lib/api/` — client fetch helpers + route `jsonError`
-- `lib/auth/` — `session.ts` (`getSessionUserId`, `requireSession`), `proxy-access.ts` (bypass + public routes + safe path), `rate-limit.ts`, `cron.ts`, `client.ts`
-- `lib/company/` — company name schema + slug
+- `lib/proxy-access.ts` — leftover `/login` URLs redirect to `/dashboard`
+- `lib/rate-limit.ts` — scan IP limiter (Upstash or in-memory)
 - `lib/crypto/secret.ts` — GitHub token encrypt/decrypt
 - `lib/zustand/persist.ts` — shared `PERSIST_VERSION` and `persistMigrate` for persisted stores
 - `hooks/use-mobile.ts` — responsive breakpoint hook
@@ -242,8 +240,8 @@ When product behavior changes, update docs **in the same change**. Use the map: 
 
 | Layer | Update when… |
 |-------|----------------|
-| In-app `/documentation` markdown | User-facing flows, architecture, layout, APIs in this app |
-| `docs/HANDOFF.md` + `README.md` | Clone setup, company/auth, project layout |
+| In-app `/documentation` markdown | User-facing flows: connect, scan, report, findings, self-host |
+| `docs/HANDOFF.md` + `README.md` | Clone setup, project layout |
 | `features/documentation/data/docs-nav.ts` | New or renamed doc pages |
 | This file (`AGENTS.md`) | Conventions agents must follow |
 
@@ -253,7 +251,7 @@ Do not leave documentation for a follow-up PR if the code already changed the fl
 
 - There is **no login wall**. `proxy.ts` allows dashboard and scan routes without a session. Leftover `/login`, `/signup`, and `/onboarding` redirect to `/dashboard`.
 - GitHub OAuth is repository access, not product login: `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_TOKEN_ENCRYPTION_KEY`. Scope is `read:user repo`. Scans never write. Optional `GITHUB_TOKEN` skips OAuth on a self-hosted server.
-- Session GitHub token: encrypted httpOnly cookie `ss_github` (~1 hour). Never returned to the browser. Never written to Postgres.
+- Session GitHub token: encrypted httpOnly cookie `ss_github` (~1 hour). Never returned to the browser. Never written to a database.
 - Scans: `POST /api/session/scan` with `source: github | sbom | files`. GitHub accepts `repositories: [{ fullName, branch? }]` (up to 8) and optional `scanMode: selected` with `files` paths. Enriches up to 400 unique packages (OSV / latest / GitHub release notes / EOL; infra and direct first). The JSON report is returned once; the UI keeps it in `sessionStorage`. Report (`/inventory`) default is infra pins + declared dependencies + security transitives. Open a package at `/inventory/:name`. File search is `GET /api/session/github/files`.
 - Required env for GitHub OAuth: `APP_URL`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_TOKEN_ENCRYPTION_KEY`. File/SBOM scans work without GitHub.
 
@@ -288,4 +286,4 @@ When adding a sidebar route, run `pnpm validate:nav` (or `pnpm check`) so CI doe
 - **Theming:** next-themes (class-based light/dark). Colors are locked in `styles/globals.css`.
 - **Toasts:** sonner
 - **State:** zustand (`persist` for sidebar, layout, command menu; sessionStorage for the scan report)
-- **Auth / DB:** Not required for session scans. Leftover Supabase helpers remain in the repo.
+- **Auth / DB:** Not required. There is no user table and no login wall.

@@ -35,6 +35,36 @@ const nextConfig: NextConfig = {
         destination: "/documentation/:path*",
         permanent: true,
       },
+      {
+        source: "/documentation/onboarding",
+        destination: "/documentation/scan",
+        permanent: true,
+      },
+      {
+        source: "/documentation/scanning",
+        destination: "/documentation/scan",
+        permanent: true,
+      },
+      {
+        source: "/documentation/architecture/tenancy",
+        destination: "/documentation/self-host",
+        permanent: true,
+      },
+      {
+        source: "/documentation/boilerplate-patterns",
+        destination: "/documentation",
+        permanent: true,
+      },
+      {
+        source: "/documentation/data-fetching",
+        destination: "/documentation",
+        permanent: true,
+      },
+      {
+        source: "/documentation/writing-docs",
+        destination: "/documentation",
+        permanent: true,
+      },
     ];
   },
   async headers() {

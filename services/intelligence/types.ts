@@ -1,8 +1,17 @@
 import type { Ecosystem } from "@/services/scanner/types";
-import type { FindingSeverity, FindingType } from "@/server/supabase/types";
 import type { ChangeSummary } from "@/services/intelligence/changelog";
 import type { ImpactFields } from "@/services/intelligence/impact";
 import type { DependencyTier } from "@/services/scanner/tiers";
+
+export type FindingType = "SECURITY" | "UPDATE" | "EOL";
+export type FindingSeverity = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "INFO";
+export type FindingStatus =
+  | "OPEN"
+  | "ACKNOWLEDGED"
+  | "IN_PROGRESS"
+  | "RESOLVED"
+  | "IGNORED"
+  | "ACCEPTED_RISK";
 
 export type VersionStatus = "up_to_date" | "patch" | "minor" | "major" | "unknown";
 export type EolStatus = "supported" | "approaching" | "eol" | "unknown";

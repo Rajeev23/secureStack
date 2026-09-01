@@ -1,18 +1,19 @@
 # Documentation sync map
 
-When you change product behavior, update the matching docs **in the same PR/commit**. Agents and humans should use this table.
+When you change product behavior, update the matching docs **in the same PR/commit**.
 
 | If you change… | Also update… |
 |----------------|--------------|
-| Session scan / no-account flow | `features/documentation/content/architecture/tenancy.md`, `onboarding.md`, `README.md`, `docs/HANDOFF.md`, `AGENTS.md` |
-| Public home (`/`, `features/home`) | `README.md`, `docs/HANDOFF.md`, `getting-started.md`, `onboarding.md` |
-| Public `/documentation` layout or docs nav | `features/documentation/content/getting-started.md`, `writing-docs.md`, `features/documentation/data/docs-nav.ts` |
-| `config/navigation.ts` | `features/documentation/content/layout/sidebar.md`, `boilerplate-patterns.md` |
-| GitHub session cookie / scan APIs | `features/documentation/content/scanning.md`, `architecture/tenancy.md` |
-| Findings / intelligence | `features/documentation/content/intelligence.md`, `docs/HANDOFF.md` |
-| Issue / severity / status chip colors | `config/issue-palette.ts`; chips on dashboard, inventory, updates, findings |
-| New feature page + sidebar route | In-app doc if user-facing; always `pnpm validate:nav`; mention in HANDOFF |
-| Folder layout (`lib/` vs `services/`) | `AGENTS.md`, `README.md`, `docs/HANDOFF.md`, `boilerplate-patterns.md`, `getting-started.md` |
+| Connect GitHub (OAuth, PAT, cookie) | `features/documentation/content/connect.md`, `self-host.md`, `README.md`, `AGENTS.md` |
+| Scan UI or `POST /api/session/scan` | `features/documentation/content/scan.md`, `connect.md` if the GitHub step changed |
+| Dashboard / Report / package pages | `features/documentation/content/report.md`, `getting-started.md` |
+| Findings / OSV / EOL / P1–P4 | `features/documentation/content/intelligence.md` |
+| Self-host env, Docker, rate limits | `features/documentation/content/self-host.md`, `README.md`, `.env.example` |
+| Public home (`/`, `features/home`) | `README.md`, `getting-started.md` |
+| Documentation placement (home vs app sidebar) | `config/app.ts` (`documentation.home` / `documentation.sidebar`) |
+| Docs sidebar | `features/documentation/data/docs-nav.ts` |
+| New product page + app sidebar | `pnpm validate:nav`; mention in `docs/HANDOFF.md` if clone setup changes |
+| Folder layout (`lib/` vs `services/`) | `AGENTS.md`, `README.md`, `docs/HANDOFF.md` |
 
 ## Rules of thumb
 
@@ -22,4 +23,4 @@ When you change product behavior, update the matching docs **in the same PR/comm
 4. **Human handoff** — keep `README.md` and `docs/HANDOFF.md` accurate for clones.
 5. **Verify** — `pnpm test:run` and skim `/documentation` locally for the pages you touched.
 
-See also: [Writing docs](/documentation/writing-docs) (in-app) and the Cursor rule `.cursor/rules/docs-sync.mdc`.
+In-app docs are **product** docs (how to connect, scan, and read findings). Contributor conventions live in `AGENTS.md` and `docs/HANDOFF.md`, not in `/documentation`.

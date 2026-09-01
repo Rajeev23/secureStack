@@ -3,7 +3,7 @@ import { ScansPage } from "@/features/scans";
 
 export const metadata: Metadata = {
   title: "Scans",
-  description: "Manual and scheduled repository scans for this company.",
+  description: "The scan held in this browser tab.",
 };
 
 export default function Page() {

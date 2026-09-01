@@ -2,7 +2,7 @@
 
 **Patch and dependency update intelligence**. Connect GitHub or upload a file. SecureStack discovers the open-source versions in use, detects new releases, explains what changed, and recommends whether to update.
 
-**No signup. No user database.** The report stays in this browser tab. GitHub tokens are not written to Postgres.
+**No signup. No user database.** The report stays in this browser tab. GitHub tokens are not written to a database.
 
 ## Stack
 
@@ -25,6 +25,8 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000). **Scan a repository** goes to `/scan`. There is no account.
 
+Source: [github.com/Rajeev23/secureStack](https://github.com/Rajeev23/secureStack)
+
 ## What you get
 
 | Area | Status |
@@ -41,7 +43,7 @@ Open [http://localhost:3000](http://localhost:3000). **Scan a repository** goes 
 
 Start here: **[docs/HANDOFF.md](./docs/HANDOFF.md)**
 
-Also see [CONTRIBUTING.md](./CONTRIBUTING.md), the public **Documentation** site (`/documentation`), and [`docs/DOC_MAP.md`](./docs/DOC_MAP.md) for keeping docs in sync with code.
+Also see the public **product documentation** at `/documentation` (connect, scan, report, findings). Contributor layout lives in [AGENTS.md](./AGENTS.md). Keep docs in sync with [`docs/DOC_MAP.md`](./docs/DOC_MAP.md).
 
 ## Scripts
 
@@ -88,29 +90,21 @@ See [AGENTS.md](./AGENTS.md) for conventions and how to add pages.
 | TanStack Query + API route | `features/scan-session/hooks/use-scan-session.ts` |
 | Session report store | `features/scan-session/stores/scan-session-store.ts` |
 | Settings | `features/settings/components/preferences-settings-page.tsx` |
-| Live UI catalog | `/documentation/ui` |
+| Documentation | `/documentation` (markdown in `features/documentation/content/`) |
 | API client | `lib/api/client.ts` |
 
-## Auth
+## GitHub access
 
-- Supabase Auth (email + password). `proxy.ts` verifies session cookies with `getClaims()` only when a protected route needs them; public pages and anonymous requests do not wait on Auth. Login/signup wait for Auth to finish (do not abort those fetches).
-- Signup: `POST /api/auth/signup` with name, email, and password (min 8 characters)
-- Login: `POST /api/auth/login` — sets the session cookie
-- Forgot password: `/forgot-password` → `POST /api/auth/forgot-password` → email link → `/auth/callback` → `/reset-password`
-- Account: `/settings/account` for name, email, and update password
-- Logout: `POST /api/auth/logout` — clears the session cookie and sends you to `/login`
-- Session user: `GET /api/auth/me` — hydrates the client user store (`401` when signed out)
-- `proxy.ts` redirects unauthenticated users to `/login`
-- Set `AUTH_DEV_BYPASS=true` in `.env.local` to skip the login wall during UI work only. Leave it `false` to test login/logout.
-- Upstash Redis is **recommended** for shared login rate limiting; without it, production uses an in-memory limiter (single instance only)
-- Set `ENFORCE_PRODUCTION_ENV=true` to fail fast when secrets or Upstash are missing
-- `/api/*` is public at the proxy layer by default — protect real APIs in the route handlers
+- There is no product login. `proxy.ts` allows the app. Leftover `/login`, `/signup`, and `/onboarding` URLs redirect to `/dashboard`.
+- GitHub OAuth is repository access: `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_TOKEN_ENCRYPTION_KEY`. Scope is `read:user repo`. Scans never write. Optional `GITHUB_TOKEN` skips OAuth on a self-hosted server.
+- The GitHub token is an encrypted httpOnly cookie (`ss_github`, ~1 hour). It is never returned to the browser.
+- Scans: `POST /api/session/scan`. Upstash Redis is optional for shared scan rate limiting; without it, production uses an in-memory limiter (single instance).
+- `/api/health` is public.
 
 ## License and security
 
 - License: [MIT](./LICENSE)
 - Security policy: [SECURITY.md](./SECURITY.md)
-- Code of conduct: [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)
 
 ## Adding a page
 
@@ -125,7 +119,7 @@ See [AGENTS.md](./AGENTS.md) for conventions and how to add pages.
 GitHub Actions runs:
 
 - `pnpm check` (lint, typecheck, unit tests, nav validation, build)
-- `pnpm test:e2e` (Playwright: public home, signup, login, forgot/reset, dashboard redirect, auth APIs)
+- `pnpm test:e2e` (Playwright: public home, scan, dashboard, session scan API)
 - `pnpm audit --prod` (dependency vulnerability scan)
 
 A **pre-push** git hook runs `pnpm check` automatically — install deps with `pnpm install` so Husky is set up via the `prepare` script.
@@ -136,4 +130,3 @@ Skip the hook once if needed: `git push --no-verify`.
 
 - Dockerfile included (multi-stage, production standalone output, non-root runtime user, health check).
 - Health endpoint: `GET /api/health`
-- Terraform baseline included in `infra/terraform/` (not required for local dev).

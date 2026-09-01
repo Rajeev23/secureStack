@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LayoutToggle } from "@/components/layout/layout-toggle";
@@ -50,22 +49,6 @@ export function PreferencesSettingsPage() {
             </div>
             <ThemeToggle />
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle as="h2">Alerts</CardTitle>
-          <CardDescription>Slack, email, and digest settings are company-wide.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Configure incoming Slack webhooks, alert email, and daily/weekly digests in{" "}
-            <Link href="/settings/company" className="text-primary hover:underline">
-              Company settings
-            </Link>
-            .
-          </p>
         </CardContent>
       </Card>
     </div>

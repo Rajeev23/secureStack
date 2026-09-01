@@ -25,9 +25,16 @@ function HomeBrand() {
   );
 }
 
-function HomeActions({ className }: { className?: string }) {
+function HomeActions({
+  githubLink,
+  className,
+}: {
+  githubLink?: ReactNode;
+  className?: string;
+}) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
+      {githubLink}
       {isDocumentationVisible ? (
         <Link href="/documentation" className={cn(buttonVariants({ variant: "outline", size: "sm" }))}>
           Docs
@@ -42,9 +49,11 @@ function HomeActions({ className }: { className?: string }) {
 
 export function HomeLayout({
   children,
+  githubLink,
   primaryCtaLabel = HOME_CTA.primary,
 }: {
   children: ReactNode;
+  githubLink?: ReactNode;
   primaryCtaLabel?: string;
 }) {
   return (
@@ -66,37 +75,40 @@ export function HomeLayout({
           </nav>
 
           <div className="ml-auto hidden md:block">
-            <HomeActions />
+            <HomeActions githubLink={githubLink} />
           </div>
 
-          <Sheet>
-            <SheetTrigger
-              className={cn(buttonVariants({ variant: "outline", size: "icon-sm" }), "ml-auto md:hidden")}
-              aria-label="Open menu"
-            >
-              <Menu className="size-4" />
-            </SheetTrigger>
-            <SheetContent side="right" className="w-72">
-              <SheetHeader>
-                <SheetTitle>SecureStack</SheetTitle>
-              </SheetHeader>
-              <nav className="mt-6 flex flex-col gap-1" aria-label="Home mobile">
-                {HOME_NAV.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:text-foreground"
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-              </nav>
-              <div className="mt-6">
-                <HomeActions className="w-full justify-stretch [&>a]:flex-1" />
-              </div>
-              <p className="sr-only">{primaryCtaLabel}</p>
-            </SheetContent>
-          </Sheet>
+          <div className="ml-auto flex items-center gap-1 md:hidden">
+            {githubLink}
+            <Sheet>
+              <SheetTrigger
+                className={cn(buttonVariants({ variant: "outline", size: "icon-sm" }))}
+                aria-label="Open menu"
+              >
+                <Menu className="size-4" />
+              </SheetTrigger>
+              <SheetContent side="right" className="w-72">
+                <SheetHeader>
+                  <SheetTitle>SecureStack</SheetTitle>
+                </SheetHeader>
+                <nav className="mt-6 flex flex-col gap-1" aria-label="Home mobile">
+                  {HOME_NAV.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className="rounded-lg px-3 py-2 text-sm text-muted-foreground hover:text-foreground"
+                    >
+                      {item.name}
+                    </Link>
+                  ))}
+                </nav>
+                <div className="mt-6">
+                  <HomeActions className="w-full justify-stretch [&>a]:flex-1" />
+                </div>
+                <p className="sr-only">{primaryCtaLabel}</p>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </header>
       {children}

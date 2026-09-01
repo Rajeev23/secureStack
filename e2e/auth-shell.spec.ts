@@ -4,6 +4,7 @@ test("home is public and offers a scan without signup", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await expect(page.getByRole("banner").getByRole("link", { name: "Scan a repository" })).toBeVisible();
+  await expect(page.getByRole("banner").getByRole("link", { name: /GitHub/i })).toBeVisible();
   await expect(page.getByRole("banner").getByRole("link", { name: "Sign in" })).toHaveCount(0);
   await expect(page.getByRole("banner").getByRole("link", { name: "Sign up" })).toHaveCount(0);
 });
@@ -12,6 +13,7 @@ test("documentation is public", async ({ page }) => {
   await page.goto("/documentation");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await expect(page).toHaveURL(/\/documentation/);
+  await expect(page.getByRole("banner").getByRole("link", { name: /GitHub/i })).toBeVisible();
 });
 
 test("header scan opens the scan page", async ({ page }) => {

@@ -2,13 +2,12 @@ import type { EnrichedComponent } from "@/services/intelligence/types";
 import type { IntelligenceFindingDraft } from "@/services/intelligence/types";
 import type { SessionScanResult } from "@/services/session-scan/types";
 import type { Finding } from "@/features/findings/model";
-import type { DashboardOverviewResponse, DashboardStat } from "@/features/dashboard/hooks/use-dashboard-stats";
+import type { DashboardOverviewResponse, DashboardStat } from "@/features/dashboard/types";
 import {
   filterInventoryRows,
   inventoryMeta,
 } from "@/services/intelligence/inventory-query";
 import {
-  recommendationKindFromComponent,
   sortAvailableUpdates,
   summarizeUpdateIntel,
 } from "@/services/intelligence/summarize";
@@ -150,15 +149,12 @@ export function dashboardFromSession(scan: SessionScanResult | null): DashboardO
   if (!scan) {
     return {
       stats: [],
-      projects: [],
       findings: [],
       updates: [],
       scans: [],
       changes: [],
       trends: [],
       priority: { P1: 0, P2: 0, P3: 0, P4: 0 },
-      resolvedLast7Days: 0,
-      meanTimeToResolveHours: null,
     };
   }
 
@@ -168,7 +164,6 @@ export function dashboardFromSession(scan: SessionScanResult | null): DashboardO
       ...item,
       projectId: scan.id,
       projectName: scan.label,
-      recommendationKind: recommendationKindFromComponent(item),
     }));
 
   const priority = { P1: 0, P2: 0, P3: 0, P4: 0 };
@@ -188,7 +183,6 @@ export function dashboardFromSession(scan: SessionScanResult | null): DashboardO
 
   return {
     stats: statsFromScan(scan),
-    projects: [],
     findings: findingsFromSession(scan).slice(0, 16),
     updates,
     scans: [
@@ -206,7 +200,5 @@ export function dashboardFromSession(scan: SessionScanResult | null): DashboardO
     changes: alerts,
     trends: [],
     priority,
-    resolvedLast7Days: 0,
-    meanTimeToResolveHours: null,
   };
 }

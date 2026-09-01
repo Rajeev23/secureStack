@@ -81,7 +81,6 @@ describe("session scan views", () => {
 
   it("summarizes a dashboard from the in-memory scan", () => {
     const overview = dashboardFromSession(scan);
-    expect(overview.projects).toEqual([]);
     expect(overview.findings).toHaveLength(1);
     expect(overview.priority?.P1).toBe(1);
     expect(overview.changes[0]?.summary).toContain("CVE-2024-0001");

@@ -5,12 +5,11 @@ import type { Finding } from "@/features/findings/model";
 import { FindingSeverityBadge, FindingTypeBadge } from "@/features/findings/components/finding-badges";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FINDING_STATUS_PALETTE, lookupPalette } from "@/config/issue-palette";
-import { projectInventoryItemHref, projectOverviewHref } from "@/features/projects/model";
+import { sessionInventoryHref } from "@/features/scan-session/lib/derive";
 
 type FindingsTableProps = {
   findings: Finding[];
   isLoading?: boolean;
-  showProject?: boolean;
   hrefFor?: (finding: Finding) => string;
   emptyTitle?: string;
   emptyDescription?: string;
@@ -19,7 +18,6 @@ type FindingsTableProps = {
 export function FindingsTable({
   findings,
   isLoading = false,
-  showProject = false,
   hrefFor,
   emptyTitle = "No findings",
   emptyDescription = "Start a scan to match CVEs, outdated packages, and end-of-life software.",
@@ -53,7 +51,6 @@ export function FindingsTable({
             <th className="px-4 py-2 font-medium">Severity</th>
             <th className="px-4 py-2 font-medium">Current</th>
             <th className="px-4 py-2 font-medium">Upgrade to</th>
-            {showProject ? <th className="px-4 py-2 font-medium">Project</th> : null}
             <th className="px-4 py-2 font-medium">Recommendation</th>
             <th className="px-4 py-2 font-medium">Status</th>
           </tr>
@@ -65,7 +62,7 @@ export function FindingsTable({
               <tr key={finding.id} className="border-b last:border-0 align-top">
                 <td className="px-4 py-2 font-medium">
                   <Link
-                    href={hrefFor?.(finding) ?? projectInventoryItemHref(finding.projectId, finding.componentName)}
+                    href={hrefFor?.(finding) ?? sessionInventoryHref(finding.componentName)}
                     className="hover:text-primary hover:underline"
                   >
                     {finding.componentName}
@@ -84,13 +81,6 @@ export function FindingsTable({
                 </td>
                 <td className="px-4 py-2 tabular-nums">{finding.currentVersion ?? "—"}</td>
                 <td className="px-4 py-2 tabular-nums">{finding.recommendedVersion ?? "—"}</td>
-                {showProject ? (
-                  <td className="px-4 py-2">
-                    <Link href={projectOverviewHref(finding.projectId)} className="text-primary hover:underline">
-                      {finding.projectName ?? "Project"}
-                    </Link>
-                  </td>
-                ) : null}
                 <td className="px-4 py-2 text-muted-foreground">{finding.recommendation}</td>
                 <td className="px-4 py-2">
                   <span className="inline-flex items-center gap-1.5 text-xs">

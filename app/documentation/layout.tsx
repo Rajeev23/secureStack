@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowUpRight, BookOpen } from "lucide-react";
+import { GithubRepoHeaderLink } from "@/components/shared/github-repo-link";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import "@/styles/docs.css";
@@ -24,6 +25,7 @@ export default function DocsRootLayout({ children }: { children: ReactNode }) {
           </Link>
 
           <div className="ml-auto flex items-center gap-2">
+            <GithubRepoHeaderLink />
             <Link
               href="/scan"
               className={cn(buttonVariants({ variant: "outline", size: "sm" }), "inline-flex")}

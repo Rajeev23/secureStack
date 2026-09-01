@@ -2,7 +2,6 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import matter from "gray-matter";
 import { z } from "zod";
-import { getCatalogEntry } from "@/features/documentation/catalog/catalog-registry";
 import {
   docsNavigation,
   findDocsLink,
@@ -75,23 +74,6 @@ export function loadDocByHref(href: string): LoadedDoc | null {
 }
 
 export function loadDocFromLink(link: DocsNavLink): LoadedDoc {
-  if (link.catalog) {
-    const entry = getCatalogEntry(link.catalog);
-    return {
-      href: link.href,
-      file: "",
-      title: entry.title,
-      description: entry.description,
-      related: entry.related ?? [],
-      markdown: "",
-      headings: entry.headings,
-    };
-  }
-
-  if (!link.file) {
-    throw new Error(`Documentation link is missing a file or catalog: ${link.href}`);
-  }
-
   const filePath = resolveDocFile(link.file);
   if (!existsSync(filePath)) {
     throw new Error(`Missing documentation file: ${link.file}`);

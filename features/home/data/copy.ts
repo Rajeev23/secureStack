@@ -108,7 +108,7 @@ export const HOME_FAQS = [
   {
     question: "Can I run this myself?",
     answer:
-      "Yes. Clone the repo, set GitHub OAuth or GITHUB_TOKEN, and run pnpm dev. You do not need Supabase.",
+      "Yes. Clone the repo, set GitHub OAuth or GITHUB_TOKEN, and run pnpm dev.",
   },
   {
     question: "Is GitHub scanning live?",
@@ -117,7 +117,7 @@ export const HOME_FAQS = [
   },
   {
     question: "Where is documentation?",
-    answer: "Public product and UI documentation lives at /documentation.",
+    answer: "Public product documentation lives at /documentation.",
   },
 ] as const;
 

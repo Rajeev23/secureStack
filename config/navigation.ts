@@ -6,6 +6,7 @@ import {
   ScanSearch,
   Settings,
 } from "lucide-react";
+import { appConfig } from "@/config/app";
 import type { NavGroup, NavItem } from "@/types/navigation";
 
 /** Omitted `visible` means the item is shown. */
@@ -46,12 +47,15 @@ export const documentationNavItem: NavItem = {
   icon: BookOpen,
   external: true,
   trailingIcon: ArrowUpRight,
-  visible: false,
 };
 
-export const secondaryNavigation: NavItem[] = [documentationNavItem];
+/** App sidebar secondary group. Empty when `appConfig.documentation.sidebar` is false. */
+export const secondaryNavigation: NavItem[] = appConfig.documentation.sidebar
+  ? [documentationNavItem]
+  : [];
 
-export const isDocumentationVisible = isNavItemVisible(documentationNavItem);
+/** Public home header/footer Docs link. */
+export const isDocumentationVisible = appConfig.documentation.home;
 
 export const navigationGroups: NavGroup[] = [
   { title: "Application", items: primaryNavigation },

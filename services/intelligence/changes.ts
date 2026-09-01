@@ -1,5 +1,8 @@
-import type { ScanSnapshot } from "@/server/supabase/types";
 import { versionStatus } from "@/services/intelligence/version";
+
+type SnapshotLike = {
+  components: ComponentRef[];
+};
 
 export type ComponentRef = {
   name: string;
@@ -39,8 +42,8 @@ function keyOf(component: ComponentRef): string {
 }
 
 export function diffSnapshots(
-  previous: ScanSnapshot | null | undefined,
-  next: Pick<ScanSnapshot, "components">,
+  previous: SnapshotLike | null | undefined,
+  next: SnapshotLike,
 ): ScanChanges {
   const prevMap = new Map((previous?.components ?? []).map((item) => [keyOf(item), item]));
   const nextMap = new Map(next.components.map((item) => [keyOf(item), item]));

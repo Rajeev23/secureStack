@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { scoreUpdateImpact } from "@/services/intelligence/impact";
 import { parsePurl, parseSbomDocument } from "@/services/intelligence/sbom";
-import { notificationsForScan } from "@/services/monitoring/scan-events";
-import { isDigestDue } from "@/services/monitoring/schedule";
 import { parseComposerJson, parseComposerLock, parseGemfile, parseGemfileLock } from "@/services/scanner/parse";
 
 describe("scoreUpdateImpact", () => {
@@ -121,45 +119,5 @@ DEPENDENCIES
       "composer.lock",
     );
     expect(locked[0]).toMatchObject({ name: "symfony/console", version: "6.4.2", fromLockfile: true });
-  });
-});
-
-describe("notificationsForScan", () => {
-  it("notifies on scan failure and new CVEs", () => {
-    expect(
-      notificationsForScan({
-        projectId: "p1",
-        projectName: "API",
-        status: "failed",
-        error: "GitHub timeout",
-      })[0]?.title,
-    ).toMatch(/Scan failed/);
-
-    const security = notificationsForScan({
-      projectId: "p1",
-      projectName: "API",
-      status: "completed",
-      changes: { newCves: ["CVE-2026-1"], alerts: [] },
-    });
-    expect(security[0]?.title).toMatch(/Security update/);
-  });
-});
-
-describe("isDigestDue", () => {
-  const now = new Date("2026-08-28T12:00:00.000Z");
-  it("is due when digest is on and never sent", () => {
-    expect(
-      isDigestDue(
-        {
-          scanIntervalHours: 24,
-          alertsEnabled: true,
-          slackWebhookUrl: null,
-          notifyEmail: null,
-          digestMode: "daily",
-          lastDigestAt: null,
-        },
-        now,
-      ),
-    ).toBe(true);
   });
 });

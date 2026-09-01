@@ -1,5 +1,6 @@
-import type { ProjectEnvironment } from "@/services/monitoring/schedule";
 import { isUpdateAvailable } from "@/services/intelligence/version";
+
+export type ProjectEnvironment = "production" | "staging" | "development" | "unknown";
 
 export type ImpactLevel = "critical" | "high" | "medium" | "low" | "none";
 export type UpdatePriority = "P1" | "P2" | "P3" | "P4";
