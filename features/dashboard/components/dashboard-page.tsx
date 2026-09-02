@@ -24,7 +24,7 @@ import { formatDistanceToNow } from "date-fns";
 
 function ScanButton({ label = "Scan a repository" }: { label?: string }) {
   return (
-    <Button render={<Link href="/scan" />}>
+    <Button nativeButton={false} render={<Link href="/scan" />}>
       <ScanSearch className="size-4" aria-hidden />
       {label}
     </Button>

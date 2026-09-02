@@ -24,7 +24,7 @@ Treat inventory and vulnerability data as sensitive.
 
 ## Known dependency notes
 
-Production `pnpm audit --prod` is expected to be clean when using the pinned Next.js version and workspace overrides for `postcss` / `sharp` in `pnpm-workspace.yaml`. Re-run audit after upgrading Next.js.
+Production `pnpm audit --prod` is expected to be clean when using the pinned Next.js version and workspace overrides for `postcss` / `sharp` / `browserslist` in `pnpm-workspace.yaml`. Re-run audit after upgrading Next.js.
 
 Please **do not** open a public GitHub issue for security bugs.
 

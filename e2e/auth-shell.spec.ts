@@ -27,7 +27,17 @@ test("dashboard is public and empty until a scan", async ({ page }) => {
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/dashboard/);
   await expect(page.getByRole("heading", { name: /Good (morning|afternoon|evening)/ })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Scan a repository" })).toBeVisible();
+  const empty = page.getByRole("status");
+  await expect(empty).toContainText("Scan to see what to update");
+  await expect(empty.getByRole("button", { name: "Scan a repository" })).toBeVisible();
+});
+
+test("scan page is public without an account", async ({ page }) => {
+  await page.goto("/scan");
+  await expect(page).toHaveURL(/\/scan/);
+  await expect(page.getByRole("heading", { name: "Scan" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Scan source" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Connect GitHub" })).toBeVisible();
 });
 
 test("leftover login and signup URLs do not require an account", async ({ page }) => {
