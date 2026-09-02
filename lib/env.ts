@@ -19,7 +19,7 @@ function isLocalHostname(hostname: string): boolean {
 }
 
 /** Public origin of this instance. Visitors never set this — the host / Vercel does. */
-export function publicAppOrigin(env: NodeJS.ProcessEnv = process.env): string {
+export function publicAppOrigin(env: Partial<NodeJS.ProcessEnv> = process.env): string {
   const appUrl = env.APP_URL?.trim().replace(/\/$/, "");
   if (appUrl) return appUrl;
   const vercel = env.VERCEL_URL?.trim().replace(/\/$/, "");
@@ -32,7 +32,7 @@ export function requireAppUrl(): string {
 }
 
 /** GitHub OAuth callback. Ignores a localhost GITHUB_REDIRECT_URI when the site is live. */
-export function githubOAuthRedirectUri(env: NodeJS.ProcessEnv = process.env): string {
+export function githubOAuthRedirectUri(env: Partial<NodeJS.ProcessEnv> = process.env): string {
   const origin = publicAppOrigin(env);
   const fallback = `${origin}/api/github/callback`;
   const explicit = env.GITHUB_REDIRECT_URI?.trim();

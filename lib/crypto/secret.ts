@@ -6,7 +6,7 @@ const ALGORITHM = "aes-256-gcm";
 export const DEV_GITHUB_ENCRYPTION_FALLBACK = "securestack-local-dev-encryption-key";
 
 export function resolveGithubEncryptionSecret(
-  env: NodeJS.ProcessEnv = process.env,
+  env: Partial<NodeJS.ProcessEnv> = process.env,
 ): string | null {
   const secret = env.GITHUB_TOKEN_ENCRYPTION_KEY?.trim();
   if (secret && secret.length >= 16) return secret;
