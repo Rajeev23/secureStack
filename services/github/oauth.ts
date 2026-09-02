@@ -1,13 +1,17 @@
-import { requireAppUrl } from "@/lib/env";
+import { githubOAuthRedirectUri } from "@/lib/env";
 
 /** Classic OAuth has no read-only private-repo scope. `repo` is required to list and clone private repos; scans never write. */
 export const GITHUB_OAUTH_SCOPES = "read:user repo";
 export const GITHUB_OAUTH_STATE_COOKIE = "github_oauth_state";
 
+export function hasGitHubOAuthConfig(): boolean {
+  return Boolean(process.env.GITHUB_CLIENT_ID?.trim() && process.env.GITHUB_CLIENT_SECRET?.trim());
+}
+
 export function getGitHubOAuthConfig() {
-  const clientId = process.env.GITHUB_CLIENT_ID;
-  const clientSecret = process.env.GITHUB_CLIENT_SECRET;
-  const redirectUri = process.env.GITHUB_REDIRECT_URI || `${requireAppUrl()}/api/github/callback`;
+  const clientId = process.env.GITHUB_CLIENT_ID?.trim();
+  const clientSecret = process.env.GITHUB_CLIENT_SECRET?.trim();
+  const redirectUri = githubOAuthRedirectUri();
 
   if (!clientId || !clientSecret) {
     throw new Error(

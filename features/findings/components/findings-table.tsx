@@ -4,7 +4,6 @@ import Link from "next/link";
 import type { Finding } from "@/features/findings/model";
 import { FindingSeverityBadge, FindingTypeBadge } from "@/features/findings/components/finding-badges";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FINDING_STATUS_PALETTE, lookupPalette } from "@/config/issue-palette";
 import { sessionInventoryHref } from "@/features/scan-session/lib/derive";
 
 type FindingsTableProps = {
@@ -52,49 +51,35 @@ export function FindingsTable({
             <th className="px-4 py-2 font-medium">Current</th>
             <th className="px-4 py-2 font-medium">Upgrade to</th>
             <th className="px-4 py-2 font-medium">Recommendation</th>
-            <th className="px-4 py-2 font-medium">Status</th>
           </tr>
         </thead>
         <tbody>
-          {findings.map((finding) => {
-            const statusPalette = lookupPalette(FINDING_STATUS_PALETTE, finding.status);
-            return (
-              <tr key={finding.id} className="border-b last:border-0 align-top">
-                <td className="px-4 py-2 font-medium">
-                  <Link
-                    href={hrefFor?.(finding) ?? sessionInventoryHref(finding.componentName)}
-                    className="hover:text-primary hover:underline"
-                  >
-                    {finding.componentName}
-                  </Link>
-                </td>
-                <td className="px-4 py-2">
-                  <div className="flex flex-col gap-1">
-                    <FindingTypeBadge type={finding.findingType} />
-                    {finding.externalReference ? (
-                      <span className="text-xs text-muted-foreground">{finding.externalReference}</span>
-                    ) : null}
-                  </div>
-                </td>
-                <td className="px-4 py-2">
-                  <FindingSeverityBadge severity={finding.severity} />
-                </td>
-                <td className="px-4 py-2 tabular-nums">{finding.currentVersion ?? "—"}</td>
-                <td className="px-4 py-2 tabular-nums">{finding.recommendedVersion ?? "—"}</td>
-                <td className="px-4 py-2 text-muted-foreground">{finding.recommendation}</td>
-                <td className="px-4 py-2">
-                  <span className="inline-flex items-center gap-1.5 text-xs">
-                    <span
-                      className="size-1.5 shrink-0 rounded-full"
-                      style={{ background: statusPalette.color }}
-                      aria-hidden
-                    />
-                    {statusPalette.label}
-                  </span>
-                </td>
-              </tr>
-            );
-          })}
+          {findings.map((finding) => (
+            <tr key={finding.id} className="border-b last:border-0 align-top">
+              <td className="px-4 py-2 font-medium">
+                <Link
+                  href={hrefFor?.(finding) ?? sessionInventoryHref(finding.componentName)}
+                  className="hover:text-primary hover:underline"
+                >
+                  {finding.componentName}
+                </Link>
+              </td>
+              <td className="px-4 py-2">
+                <div className="flex flex-col gap-1">
+                  <FindingTypeBadge type={finding.findingType} />
+                  {finding.externalReference ? (
+                    <span className="text-xs text-muted-foreground">{finding.externalReference}</span>
+                  ) : null}
+                </div>
+              </td>
+              <td className="px-4 py-2">
+                <FindingSeverityBadge severity={finding.severity} />
+              </td>
+              <td className="px-4 py-2 tabular-nums">{finding.currentVersion ?? "—"}</td>
+              <td className="px-4 py-2 tabular-nums">{finding.recommendedVersion ?? "—"}</td>
+              <td className="px-4 py-2 text-muted-foreground">{finding.recommendation}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>

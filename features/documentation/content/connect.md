@@ -25,6 +25,19 @@ You can skip this page and [upload an SBOM or manifests](/documentation/scan) in
 
 OAuth scope is `read:user repo`. A pasted PAT needs **repo read** (classic `repo` for private repos, or fine-grained Contents: Read).
 
+## Test locally without `.env` keys
+
+You cannot start **Connect GitHub** from a URL alone. GitHub requires a registered OAuth App (`client_id` / `client_secret`) on the **server**. Putting those in the page URL would leak them.
+
+To scan your own GitHub repos on `localhost` with an empty `.env.local`:
+
+1. Open `/scan`.
+2. Create a token at [github.com/settings/tokens](https://github.com/settings/tokens) (classic `repo`, or fine-grained Contents: Read).
+3. Paste it under **Or paste a personal access token** → **Use token**.
+4. Pick repositories and scan.
+
+Local cookie encryption uses a built-in development key if `GITHUB_TOKEN_ENCRYPTION_KEY` is unset. Production (Vercel) still requires a real key and the OAuth App so visitors can click **Connect GitHub**.
+
 ## OAuth
 
 1. Open `/scan` and leave the source on **GitHub**.
@@ -32,9 +45,15 @@ OAuth scope is `read:user repo`. A pasted PAT needs **repo read** (classic `repo
 3. Approve access on GitHub. The callback is `/api/github/callback`.
 4. You return to `/scan` connected as your GitHub login.
 
+Visitors do **not** put a token in `.env` and they do **not** run the app. They open `/scan` and click **Connect GitHub**.
+
+The **host** (you, on this machine or on Vercel) registers **one** GitHub OAuth App and sets `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` / `GITHUB_TOKEN_ENCRYPTION_KEY` on the **server** (Vercel Environment Variables when live). Every visitor then authorizes **their** GitHub account in the browser. Different people = different GitHub logins. Nothing is installed on the visitor’s computer.
+
+Vercel checklist: [Self-host](/documentation/self-host).
+
 The server stores the access token in cookie `ss_github`. The cookie is **httpOnly** and **encrypted**. API responses never send the token to JavaScript. Listing repositories and scanning happen on the server.
 
-If the OAuth state expires, you see “GitHub connection expired. Try again.” Click **Connect GitHub** again.
+If the OAuth state expires, you see “GitHub connection expired. Try again.” Click **Connect GitHub** again. If the host has not set the OAuth App on the server (Vercel env), Connect GitHub cannot start — paste a PAT instead.
 
 ## Personal access token
 
@@ -47,6 +66,8 @@ The PAT is sent once to `POST /api/session/github` and then held in the same enc
 ## Server token (self-host)
 
 If the host sets `GITHUB_TOKEN`, `/scan` can show **Connected as GITHUB_TOKEN via GITHUB_TOKEN on this server.** Visitors do not need OAuth. See [Self-host](/documentation/self-host).
+
+**Do not set `GITHUB_TOKEN` on a public internet host.** That token is instance-wide: every visitor can list and scan whatever the token can read. Use it only on a private instance you control.
 
 OAuth and pasted PATs still require `GITHUB_TOKEN_ENCRYPTION_KEY` (16+ characters) so the cookie can be encrypted.
 

@@ -16,5 +16,7 @@ describe("resolveProxyAccessDecision", () => {
     expect(resolveProxyAccessDecision({ pathname: "/forgot-password" })).toBe("redirect-dashboard");
     expect(resolveProxyAccessDecision({ pathname: "/reset-password" })).toBe("redirect-dashboard");
     expect(resolveProxyAccessDecision({ pathname: "/auth/callback" })).toBe("redirect-dashboard");
+    expect(resolveProxyAccessDecision({ pathname: "/login/" })).toBe("redirect-dashboard");
+    expect(resolveProxyAccessDecision({ pathname: "/signup/" })).toBe("redirect-dashboard");
   });
 });

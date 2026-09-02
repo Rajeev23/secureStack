@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { decryptSecret, encryptSecret } from "@/lib/crypto/secret";
+import { decryptSecret, encryptSecret, resolveGithubEncryptionSecret } from "@/lib/crypto/secret";
 import { DomainError } from "@/lib/errors";
 
 export const GITHUB_SESSION_COOKIE = "ss_github";
@@ -23,8 +23,7 @@ function cookieOptions(maxAge: number) {
 }
 
 export function hasGithubEncryptionKey(): boolean {
-  const secret = process.env.GITHUB_TOKEN_ENCRYPTION_KEY;
-  return Boolean(secret && secret.length >= 16);
+  return Boolean(resolveGithubEncryptionSecret());
 }
 
 export function envGitHubToken(): string | null {

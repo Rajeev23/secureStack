@@ -198,7 +198,8 @@ Keep `lib/` free of GitHub/OSV/Slack I/O. Feature-local helpers stay under `feat
 - `lib/scan-source.ts` — scan source display labels
 - `lib/api/` — client fetch helpers + route `jsonError`
 - `lib/proxy-access.ts` — leftover `/login` URLs redirect to `/dashboard`
-- `lib/rate-limit.ts` — scan IP limiter (Upstash or in-memory)
+- `lib/rate-limit.ts` — IP limiter (Upstash or in-memory) for scans and GitHub session routes
+- `lib/request-body.ts` — JSON body size cap for session POSTs
 - `lib/crypto/secret.ts` — GitHub token encrypt/decrypt
 - `lib/zustand/persist.ts` — shared `PERSIST_VERSION` and `persistMigrate` for persisted stores
 - `hooks/use-mobile.ts` — responsive breakpoint hook
@@ -250,9 +251,9 @@ Do not leave documentation for a follow-up PR if the code already changed the fl
 ## Auth
 
 - There is **no login wall**. `proxy.ts` allows dashboard and scan routes without a session. Leftover `/login`, `/signup`, and `/onboarding` redirect to `/dashboard`.
-- GitHub OAuth is repository access, not product login: `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_TOKEN_ENCRYPTION_KEY`. Scope is `read:user repo`. Scans never write. Optional `GITHUB_TOKEN` skips OAuth on a self-hosted server.
+- GitHub OAuth is repository access, not product login: `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_TOKEN_ENCRYPTION_KEY`. Scope is `read:user repo`. Scans never write. Optional `GITHUB_TOKEN` skips OAuth on a **private** self-hosted server (instance-wide; do not set on a public host).
 - Session GitHub token: encrypted httpOnly cookie `ss_github` (~1 hour). Never returned to the browser. Never written to a database.
-- Scans: `POST /api/session/scan` with `source: github | sbom | files`. GitHub accepts `repositories: [{ fullName, branch? }]` (up to 8) and optional `scanMode: selected` with `files` paths. Enriches up to 400 unique packages (OSV / latest / GitHub release notes / EOL; infra and direct first). The JSON report is returned once; the UI keeps it in `sessionStorage`. Report (`/inventory`) default is infra pins + declared dependencies + security transitives. Open a package at `/inventory/:name`. File search is `GET /api/session/github/files`.
+- Scans: `POST /api/session/scan` with `source: github | sbom | files`. GitHub accepts `repositories: [{ fullName, branch? }]` (up to 8) and optional `scanMode: selected` with `files` paths. Enriches up to 400 unique packages (OSV / latest / GitHub release notes / EOL; infra and direct first). JSON body is capped at 22 MB. IP rate limits: 8 scans / 12 GitHub connect or PAT pastes / 60 repo list or file searches per 15 minutes. The JSON report is returned once; the UI keeps it in `sessionStorage`. Report (`/inventory`) default is infra pins + declared dependencies + security transitives. Open a package at `/inventory/:name`. File search is `GET /api/session/github/files`.
 - Required env for GitHub OAuth: `APP_URL`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_TOKEN_ENCRYPTION_KEY`. File/SBOM scans work without GitHub.
 
 ## Quality checks (before push)

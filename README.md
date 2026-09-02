@@ -96,9 +96,9 @@ See [AGENTS.md](./AGENTS.md) for conventions and how to add pages.
 ## GitHub access
 
 - There is no product login. `proxy.ts` allows the app. Leftover `/login`, `/signup`, and `/onboarding` URLs redirect to `/dashboard`.
-- GitHub OAuth is repository access: `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_TOKEN_ENCRYPTION_KEY`. Scope is `read:user repo`. Scans never write. Optional `GITHUB_TOKEN` skips OAuth on a self-hosted server.
+- GitHub OAuth is repository access: `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_TOKEN_ENCRYPTION_KEY`. Scope is `read:user repo`. Scans never write. Visitors never set env — they click **Connect GitHub**. Optional `GITHUB_TOKEN` skips OAuth on a private self-hosted server; it is instance-wide and must not be set on a public host.
 - The GitHub token is an encrypted httpOnly cookie (`ss_github`, ~1 hour). It is never returned to the browser.
-- Scans: `POST /api/session/scan`. Upstash Redis is optional for shared scan rate limiting; without it, production uses an in-memory limiter (single instance).
+- Scans: `POST /api/session/scan` (JSON body capped at 22 MB). IP rate limits cover scans, GitHub connect, and repo/file listing. Upstash Redis is optional for shared limiting; without it, production uses an in-memory limiter (single instance).
 - `/api/health` is public.
 
 ## License and security
@@ -128,5 +128,6 @@ Skip the hook once if needed: `git push --no-verify`.
 
 ## Deployment baseline
 
+- **Vercel:** set `APP_URL`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, and `GITHUB_TOKEN_ENCRYPTION_KEY` in Project → Environment Variables. Do not set `GITHUB_REDIRECT_URI` or `GITHUB_TOKEN`. Add the production callback `https://YOUR_DOMAIN/api/github/callback` on the GitHub OAuth App. Visitors click **Connect GitHub** — they do not install anything. Details: `/documentation/self-host`.
 - Dockerfile included (multi-stage, production standalone output, non-root runtime user, health check).
 - Health endpoint: `GET /api/health`

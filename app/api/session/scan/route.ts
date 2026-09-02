@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api/handle-error";
 import { DomainError } from "@/lib/errors";
+import { readJsonBody } from "@/lib/request-body";
 import { parseGitHubBranch, parseGitHubRepoFullName } from "@/services/github/api";
 import { resolveGitHubSessionToken } from "@/services/github/session-token";
 import { enforceSessionScanRateLimit } from "@/services/session-scan/rate-limit";
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
   if (limited) return limited;
 
   try {
-    const body = (await request.json().catch(() => ({}))) as ScanBody;
+    const body = await readJsonBody<ScanBody>(request, {});
     const source = body.source;
     const github = await resolveGitHubSessionToken();
 

@@ -77,4 +77,4 @@ Dashboard “updates available” counts **actionable** rows (infra, declared de
 
 Default Report already hides routine lockfile packages, so the 400-package budget covers what you see on the page.
 
-Open a package from Report to see current → new, categorized changes, security, and the recommendation together. The findings table at `/findings` is the same snapshot.
+Open a package from Report to see current → new, categorized changes, security, and the recommendation together. The findings table at `/findings` is the same snapshot. It has no Open / In progress / Closed column — this product does not keep finding workflow.

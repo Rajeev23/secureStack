@@ -55,7 +55,7 @@ These routes are **not** in the sidebar. They still read the same in-tab report:
 | URL | Content |
 | --- | --- |
 | `/updates` | Packages with a newer version and a recommended action |
-| `/findings` | Security, outdated, and EOL findings |
+| `/findings` | Security, outdated, and EOL findings (no workflow status — there is no ignore/accept state) |
 
 Click a row to open the same package page.
 

@@ -10,6 +10,7 @@ export type GithubSessionStatus = {
   connected: boolean;
   login: string | null;
   source: "cookie" | "env" | null;
+  oauthConfigured: boolean;
   repositories: GithubRepo[];
 };
 

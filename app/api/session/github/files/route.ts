@@ -3,8 +3,12 @@ import { jsonError } from "@/lib/api/handle-error";
 import { DomainError } from "@/lib/errors";
 import { searchGitHubRepositoryFiles } from "@/services/github/search-files";
 import { resolveGitHubSessionToken } from "@/services/github/session-token";
+import { enforceSessionGithubReadRateLimit } from "@/services/session-scan/rate-limit";
 
 export async function GET(request: Request) {
+  const limited = await enforceSessionGithubReadRateLimit(request);
+  if (limited) return limited;
+
   try {
     const github = await resolveGitHubSessionToken();
     if (!github) {

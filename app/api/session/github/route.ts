@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api/handle-error";
 import { DomainError } from "@/lib/errors";
+import { readJsonBody } from "@/lib/request-body";
 import { getGitHubAuthenticatedUser, listGitHubRepositories } from "@/services/github/api";
 import {
   buildGitHubAuthorizeUrl,
   GITHUB_OAUTH_STATE_COOKIE,
+  hasGitHubOAuthConfig,
   safeReturnPath,
 } from "@/services/github/oauth";
 import {
@@ -13,17 +15,23 @@ import {
   resolveGitHubSessionToken,
   setGitHubSessionCookie,
 } from "@/services/github/session-token";
+import {
+  enforceSessionGithubReadRateLimit,
+  enforceSessionGithubWriteRateLimit,
+} from "@/services/session-scan/rate-limit";
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   if (requestUrl.searchParams.get("connect") === "1") {
-    if (!hasGithubEncryptionKey()) {
-      return NextResponse.json(
-        { error: "GITHUB_TOKEN_ENCRYPTION_KEY is required to connect GitHub (min 16 characters)." },
-        { status: 503 },
-      );
-    }
+    const limited = await enforceSessionGithubWriteRateLimit(request);
+    if (limited) return limited;
     const returnTo = safeReturnPath(requestUrl.searchParams.get("returnTo"), "/scan");
+    if (!hasGithubEncryptionKey() || !hasGitHubOAuthConfig()) {
+      const url = new URL(returnTo, request.url);
+      url.searchParams.set("github", "error");
+      url.searchParams.set("reason", "oauth_not_configured");
+      return NextResponse.redirect(url);
+    }
     const nonce = crypto.randomUUID();
     const authorizeUrl = buildGitHubAuthorizeUrl(nonce);
     const response = NextResponse.redirect(authorizeUrl);
@@ -41,13 +49,19 @@ export async function GET(request: Request) {
     return response;
   }
 
+  const limited = await enforceSessionGithubReadRateLimit(request);
+  if (limited) return limited;
+
   try {
     const session = await resolveGitHubSessionToken();
+    const oauthConfigured = hasGitHubOAuthConfig() && hasGithubEncryptionKey();
+
     if (!session) {
       return NextResponse.json({
         connected: false,
         login: null,
         source: null,
+        oauthConfigured,
         repositories: [],
       });
     }
@@ -63,6 +77,7 @@ export async function GET(request: Request) {
       connected: true,
       login: user.login,
       source: session.source,
+      oauthConfigured,
       repositories,
     });
   } catch (error) {
@@ -71,8 +86,11 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const limited = await enforceSessionGithubWriteRateLimit(request);
+  if (limited) return limited;
+
   try {
-    const body = (await request.json().catch(() => ({}))) as { token?: unknown };
+    const body = await readJsonBody<{ token?: unknown }>(request, {});
     const token = typeof body.token === "string" ? body.token.trim() : "";
     if (!token) {
       throw new DomainError("Paste a GitHub personal access token with repo read access.", 400);

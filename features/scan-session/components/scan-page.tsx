@@ -60,7 +60,9 @@ export function ScanPage() {
       toast.error(
         githubReason === "invalid_state"
           ? "GitHub connection expired. Try again."
-          : "GitHub connection failed. Try again.",
+          : githubReason === "oauth_not_configured"
+            ? "Connect GitHub needs an OAuth App on the server (Vercel). To test locally, paste a personal access token below."
+            : "GitHub connection failed. Try again.",
       );
     }
   }, [githubParam, githubReason, refetchGithub]);
@@ -158,14 +160,24 @@ export function ScanPage() {
             ) : (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Authorize GitHub, or paste a personal access token with repo read access. The token never goes
-                  into a database.
+                  Click <span className="font-medium text-foreground">Connect GitHub</span> to authorize your
+                  account (live site). To test locally with no keys in <span className="font-mono">.env</span>,
+                  paste a personal access token instead —{" "}
+                  <a
+                    href="https://github.com/settings/tokens"
+                    className="text-foreground underline underline-offset-2"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    create one on GitHub
+                  </a>{" "}
+                  with repo read. Nothing is installed on your machine.
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <Button render={<a href={githubConnectHref()} />}>Connect GitHub</Button>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="github-token">Personal access token</Label>
+                  <Label htmlFor="github-token">Or paste a personal access token</Label>
                   <Textarea
                     id="github-token"
                     value={token}

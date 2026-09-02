@@ -2,12 +2,22 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:
 
 const ALGORITHM = "aes-256-gcm";
 
+/** Used only when NODE_ENV is not production and no env key is set. Never use this on Vercel. */
+export const DEV_GITHUB_ENCRYPTION_FALLBACK = "securestack-local-dev-encryption-key";
+
+export function resolveGithubEncryptionSecret(
+  env: NodeJS.ProcessEnv = process.env,
+): string | null {
+  const secret = env.GITHUB_TOKEN_ENCRYPTION_KEY?.trim();
+  if (secret && secret.length >= 16) return secret;
+  if (env.NODE_ENV !== "production") return DEV_GITHUB_ENCRYPTION_FALLBACK;
+  return null;
+}
+
 function getKey(): Buffer {
-  const secret = process.env.GITHUB_TOKEN_ENCRYPTION_KEY;
-  if (!secret || secret.length < 16) {
-    throw new Error(
-      "GITHUB_TOKEN_ENCRYPTION_KEY is required (min 16 characters).",
-    );
+  const secret = resolveGithubEncryptionSecret();
+  if (!secret) {
+    throw new Error("GITHUB_TOKEN_ENCRYPTION_KEY is required (min 16 characters).");
   }
   return createHash("sha256").update(secret).digest();
 }

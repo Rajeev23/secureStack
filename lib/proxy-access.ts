@@ -8,9 +8,17 @@ const LEFTOVER_AUTH_PATHS = new Set([
   "/reset-password",
 ]);
 
+function normalizePathname(pathname: string): string {
+  if (pathname.length > 1 && pathname.endsWith("/")) {
+    return pathname.replace(/\/+$/, "") || "/";
+  }
+  return pathname;
+}
+
 /** Old account URLs still redirect so bookmarks do not 404. */
 export function resolveProxyAccessDecision({ pathname }: { pathname: string }): ProxyAccessDecision {
-  if (LEFTOVER_AUTH_PATHS.has(pathname) || pathname.startsWith("/auth/")) {
+  const path = normalizePathname(pathname);
+  if (LEFTOVER_AUTH_PATHS.has(path) || path.startsWith("/auth/")) {
     return "redirect-dashboard";
   }
   return "allow";

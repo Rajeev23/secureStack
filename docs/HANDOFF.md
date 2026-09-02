@@ -21,11 +21,13 @@ cp .env.example .env.local
 ```
 
 1. Set `APP_URL=http://localhost:3000`
-2. Create a GitHub OAuth App (callback `http://localhost:3000/api/github/callback`) **or** set `GITHUB_TOKEN`
+2. Create a GitHub OAuth App (callback `http://localhost:3000/api/github/callback`) **or** set `GITHUB_TOKEN` (instance-wide — do not set on a public host)
 3. If you use OAuth or a pasted PAT, set `GITHUB_TOKEN_ENCRYPTION_KEY` (16+ characters)
 4. `pnpm dev`
 
 Open `/`, then **Scan a repository**.
+
+On **Vercel**, visitors never clone or install. Set `APP_URL`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, and `GITHUB_TOKEN_ENCRYPTION_KEY` in Vercel env (not `GITHUB_REDIRECT_URI`, not `GITHUB_TOKEN`). They click **Connect GitHub**, scan, and leave. See `/documentation/self-host`.
 
 Run all checks before pushing:
 

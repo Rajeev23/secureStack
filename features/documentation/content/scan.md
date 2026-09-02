@@ -75,4 +75,8 @@ Report is **not** a `node_modules` dump. It lists **infrastructure pins** (versi
 | Uploaded manifest files | 40 |
 | Unique packages checked for CVE / latest / EOL | 400 (infra → direct → transitive) |
 | GitHub release-note lookups | 40 |
+| JSON request body | 22 MB |
+| Scans per IP | 8 per 15 minutes |
+| GitHub connect / PAT paste per IP | 12 per 15 minutes |
+| GitHub repo list / file search per IP | 60 per 15 minutes |
 | Request time budget | 120 seconds |
